@@ -59,3 +59,19 @@ export const getCounsellorRating = async (req, res, next) => {
     next(err);
   }
 };
+
+
+export const getAvailability = async (req, res, next) => {
+  try {
+    const { counsellorId } = req.params;
+    const counsellor = await Counsellor.findById(counsellorId).select("availableTime");
+
+    if (!counsellor) {
+      return res.status(404).json({ success: false, message: "Counsellor not found" });
+    }
+
+    res.status(200).json({ success: true, data: counsellor.availableTime });
+  } catch (err) {
+    next(err);
+  }
+};

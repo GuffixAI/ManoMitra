@@ -1,9 +1,21 @@
+// server/middlewares/sanitize.middleware.js
+
 import sanitizeHtml from "sanitize-html";
 
-// On-demand sanitizer for specific fields:
-export const sanitizeBodyField = (field) => (req, res, next) => {
-  if (req.body?.[field]) {
-    req.body[field] = sanitizeHtml(req.body[field], { allowedTags: [], allowedAttributes: {} });
+const sanitize = (dirty) => {
+  return sanitizeHtml(dirty, {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
+};
+
+export const sanitizeRequest = (req, res, next) => {
+  if (req.body) {
+    for (const key in req.body) {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = sanitize(req.body[key]);
+      }
+    }
   }
   next();
 };

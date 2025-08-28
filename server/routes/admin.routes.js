@@ -12,8 +12,6 @@ const router = express.Router();
 
 // Admin login route
 router.post("/login", loginAdmin);
-router.post("/appoint/counsellor", protect, appointCounsellor);
-router.post("/appoint/volunteer", protect, appointVolunteer);
 
 // Protected routes for admin only
 router.post("/appoint/counsellor", protect, appointCounsellor);

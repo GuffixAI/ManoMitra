@@ -3,4 +3,3 @@ server/node_modules
 venv 
 .next
 .env
-server/package-lock.json

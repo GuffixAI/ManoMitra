@@ -22,7 +22,12 @@ const app = express();
 
 // Security & parsing
 app.use(express.json({ limit:"1mb" }));
-app.use(cors({ origin: "*"}));
+// app.use(cors({ origin: "*"}));
+app.set('trust proxy', 1);
+app.use(cors({
+  origin: process.env.CLIENT_URL ?? "http://localhost:3000",
+  credentials: true
+}));
 app.use(morgan("dev"));
 app.use(helmet());
 app.use(cookieParser());

@@ -7,6 +7,6 @@ import { rateTarget, getPublicRating } from "../controllers/feedback.controller.
 const router = express.Router();
 
 router.post("/", protect, requireRole([ROLES.STUDENT]), rateTarget);
-router.get("/", protect, getPublicRating); // anyone authenticated can see averages
+router.get("/", protect, getPublicRating);
 
 export default router;
