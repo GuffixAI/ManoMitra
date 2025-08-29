@@ -1,17 +1,19 @@
 // app/(dashboard)/counsellor/layout.tsx
-import { SidebarNav } from "@/components/layout/SidebarNav";
+"use client";
 import { ReactNode } from "react";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
 
 export default function CounsellorLayout({ children }: { children: ReactNode }) {
-  const navItems = [
-    { title: "Dashboard", href: "/counsellor" },
-    { title: "Availability", href: "/counsellor/availability" },
-    { title: "Feedback", href: "/counsellor/feedback" },
-  ];
   return (
-    <div className="flex">
-      <SidebarNav items={navItems} />
-      <main className="flex-1 p-8">{children}</main>
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-auto p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

@@ -48,12 +48,13 @@ export default function LoginPage() {
       toast.success("Login successful!");
       
       // Redirect based on role
-      const dashboardUrl = {
+      const roleToDashboard: Record<string, string> = {
         [ROLES.STUDENT]: '/student',
         [ROLES.COUNSELLOR]: '/counsellor',
         [ROLES.VOLUNTEER]: '/volunteer',
         [ROLES.ADMIN]: '/admin',
-      }[selectedRole as keyof typeof ROLES];
+      };
+      const dashboardUrl = roleToDashboard[selectedRole];
       
       if (dashboardUrl) {
         router.push(dashboardUrl);

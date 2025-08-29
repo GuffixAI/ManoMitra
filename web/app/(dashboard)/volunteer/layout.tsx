@@ -1,16 +1,12 @@
 // app/(dashboard)/volunteer/layout.tsx
-import { SidebarNav } from "@/components/layout/SidebarNav";
+"use client";
 import { ReactNode } from "react";
+import { DashboardLayout } from "@/components/layout/dashboard-layout";
 
 export default function VolunteerLayout({ children }: { children: ReactNode }) {
-  const navItems = [
-    { title: "Dashboard", href: "/volunteer" },
-    { title: "My Rooms", href: "/volunteer/rooms" },
-  ];
   return (
-    <div className="flex">
-      <SidebarNav items={navItems} />
-      <main className="flex-1 p-8">{children}</main>
-    </div>
+    <DashboardLayout>
+      {children}
+    </DashboardLayout>
   );
 }

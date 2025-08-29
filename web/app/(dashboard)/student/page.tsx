@@ -24,7 +24,6 @@ import {
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 
 export default function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -68,7 +67,7 @@ export default function StudentDashboardPage() {
   const isLoading = dashboardLoading || bookingsLoading || reportsLoading || notificationsLoading;
 
   return (
-    <DashboardLayout>
+    <div>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -221,7 +220,7 @@ export default function StudentDashboardPage() {
                       Create New Report
                     </Button>
                   </Link>
-                  <Link href="/student/peer-support">
+                  <Link href="/chat">
                     <Button variant="outline" className="w-full justify-start">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Join Peer Support Room
@@ -456,7 +455,7 @@ export default function StudentDashboardPage() {
                 <div className="text-center py-8">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">Join peer support rooms to connect with fellow students</p>
-                  <Link href="/student/peer-support">
+                  <Link href="/chat">
                     <Button>
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Join Support Rooms
@@ -468,6 +467,6 @@ export default function StudentDashboardPage() {
           </TabsContent>
         </Tabs>
       </motion.div>
-    </DashboardLayout>
+    </div>
   );
 }

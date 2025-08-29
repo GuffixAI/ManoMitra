@@ -1,8 +1,10 @@
 "use client";
+
 import { ReactNode } from "react";
-import { Sidebar } from "./sidebar";
-import { Header } from "./header";
+
 import { cn } from "@/lib/utils";
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -30,9 +32,4 @@ export function DashboardLayout({ children, className }: DashboardLayoutProps) {
       </div>
     </div>
   );
-}
-
-// Helper function for class names
-function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(" ");
 }

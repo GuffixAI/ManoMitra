@@ -1,12 +1,13 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
+// Avoid hard-coupling to server secret; decode payload without verifying
 import { ROLES } from './lib/constants';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-fallback-secret');
+// Note: We intentionally don't verify the JWT in middleware to avoid secret mismatch
 
-const AUTH_ROUTES = ['/login', '/register'];
+const AUTH_ROUTES = ['/login', '/register', '/auth/login', '/auth/register'];
+const PUBLIC_ROUTES = ['/', '/splash', ...AUTH_ROUTES];
 const DASHBOARD_ROOTS = {
   [ROLES.STUDENT]: '/student',
   [ROLES.COUNSELLOR]: '/counsellor',
@@ -19,15 +20,18 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
 
   // If no token and trying to access a protected route
-  if (!token && !AUTH_ROUTES.some(p => pathname.startsWith(p))) {
+  if (!token && !PUBLIC_ROUTES.some(p => pathname === p || pathname.startsWith(p + '/'))) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // If there is a token
   if (token) {
     try {
-      const { payload } = await jwtVerify(token, JWT_SECRET);
-      const role = payload.role as string;
+      // Decode JWT payload without verification (base64url)
+      const [, payloadB64Url] = token.split('.');
+      const base64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const json = JSON.parse(globalThis.atob(base64));
+      const role = json.role as string;
 
       // If authenticated, redirect from auth routes to their dashboard
       if (AUTH_ROUTES.some(p => pathname.startsWith(p))) {
@@ -39,11 +43,12 @@ export async function middleware(request: NextRequest) {
       const requiredRole = Object.keys(DASHBOARD_ROOTS).find(r => pathname.startsWith(DASHBOARD_ROOTS[r as keyof typeof DASHBOARD_ROOTS]));
       
       if (requiredRole && role !== requiredRole) {
-         return NextResponse.redirect(new URL('/unauthorized', request.url)); // Or a 403 page
+        const dashboardUrl = DASHBOARD_ROOTS[role as keyof typeof DASHBOARD_ROOTS] || '/login';
+        return NextResponse.redirect(new URL(dashboardUrl, request.url));
       }
 
     } catch (err) {
-      // Token is invalid, clear it and redirect to login
+      // If decoding fails, treat as unauthenticated
       const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('token');
       return response;

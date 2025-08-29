@@ -40,12 +40,17 @@ export const useAuthStore = create<AuthState>()(
         isLoading: false 
       }),
 
-      logout: () => set({ 
-        user: null, 
-        isAuthenticated: false, 
-        error: null,
-        isLoading: false 
-      }),
+      logout: () => {
+        if (typeof document !== 'undefined') {
+          document.cookie = `token=; path=/; max-age=0`;
+        }
+        set({ 
+          user: null, 
+          isAuthenticated: false, 
+          error: null,
+          isLoading: false 
+        });
+      },
 
       setUser: (user: User | null) => set({ 
         user, 
@@ -67,6 +72,11 @@ export const useAuthStore = create<AuthState>()(
           console.log(response)
           
           if (response.success && response?.user) {
+            // Persist token in cookie for middleware and API calls
+            if (response.token && typeof document !== 'undefined') {
+              const sevenDays = 7 * 24 * 60 * 60;
+              document.cookie = `token=${encodeURIComponent(response.token)}; path=/; max-age=${sevenDays}`;
+            }
             set({ 
               user: response.user, 
               isAuthenticated: true, 
@@ -107,17 +117,13 @@ export const useAuthStore = create<AuthState>()(
               throw new Error('Invalid role');
           }
           
-          if (response.success && response.data.user) {
-            set({ 
-              user: response.data.user, 
-              isAuthenticated: true, 
-              error: null,
-              isLoading: false 
-            });
+          if (response.success && response.user) {
+            // Do NOT auto-authenticate on registration. Let the user log in.
+            set({ isLoading: false, error: null });
             return true;
           } else {
             set({ 
-              error: response.message || 'Registration failed', 
+              error: (response as any).message || 'Registration failed', 
               isLoading: false 
             });
             return false;

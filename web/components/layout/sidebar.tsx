@@ -89,7 +89,7 @@ export function Sidebar({ className }: SidebarProps) {
           },
           {
             title: "Peer Support",
-            href: "/student/peer-support",
+            href: "/chat",
             icon: MessageSquare,
             badge: null
           },
