@@ -1,90 +1,187 @@
-// app/(auth)/login/page.tsx
+// Enhanced login page with role selection and proper API integration
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useMutation } from "@tanstack/react-query";
-import { api } from "@/lib/axios";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { ROLES } from "@/lib/constants";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+import Link from "next/link";
 
 type LoginForm = {
   email: string;
   password: string;
+  role: string;
 };
 
 export default function LoginPage() {
-  const { register, handleSubmit } = useForm<LoginForm>();
-  const loginAction = useAuthStore((s) => s.login);
+  const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
+  const { loginUser, isLoading, error, clearError } = useAuthStore();
   const router = useRouter();
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data: LoginForm) => api.post(`/students/login`, data),
-    onSuccess: async () => {
-      try {
-        const res = await api.get("/auth/me");
-        loginAction(res.data.user);
-        toast.success("Login successful!");
+  const handleLogin = async (data: LoginForm) => {
+    if (!selectedRole) {
+      toast.error("Please select your role");
+      return;
+    }
 
-        const role = res.data.user.role;
-        if (role === ROLES.STUDENT) router.push("/student");
-        else if (role === ROLES.COUNSELLOR) router.push("/counsellor");
-        else if (role === ROLES.VOLUNTEER) router.push("/volunteer");
-        else if (role === ROLES.ADMIN) router.push("/admin");
-        else router.push("/");
-      } catch {
-        toast.error("Could not load your profile. Please try again.");
+    clearError();
+    
+    const success = await loginUser({
+      email: data.email,
+      password: data.password,
+      role: selectedRole as any
+    });
+
+    if (success) {
+      toast.success("Login successful!");
+      
+      // Redirect based on role
+      const dashboardUrl = {
+        [ROLES.STUDENT]: '/student',
+        [ROLES.COUNSELLOR]: '/counsellor',
+        [ROLES.VOLUNTEER]: '/volunteer',
+        [ROLES.ADMIN]: '/admin',
+      }[selectedRole as keyof typeof ROLES];
+      
+      if (dashboardUrl) {
+        router.push(dashboardUrl);
       }
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message ?? "Login failed.");
-    },
-  });
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
       >
-        <Card className="w-[350px]">
-          <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
+        <Card className="w-full">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+            <p className="text-muted-foreground">Sign in to your account</p>
           </CardHeader>
           <CardContent>
-            <form
-              onSubmit={handleSubmit((data) => mutate(data))}
-              className="space-y-4"
-            >
+            <form onSubmit={handleSubmit(handleLogin)} className="space-y-4">
+              {/* Role Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="role">I am a...</Label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ROLES.STUDENT}>Student</SelectItem>
+                    <SelectItem value={ROLES.COUNSELLOR}>Counsellor</SelectItem>
+                    <SelectItem value={ROLES.VOLUNTEER}>Volunteer</SelectItem>
+                    <SelectItem value={ROLES.ADMIN}>Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
-                  {...register("email", { required: true })}
-                  required
+                  placeholder="Enter your email"
+                  {...register("email", { 
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address"
+                    }
+                  })}
+                  className={errors.email ? "border-destructive" : ""}
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
               </div>
+
+              {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  {...register("password", { required: true })}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    {...register("password", { 
+                      required: "Password is required",
+                      minLength: {
+                        value: 8,
+                        message: "Password must be at least 8 characters"
+                      }
+                    })}
+                    className={errors.password ? "border-destructive pr-10" : "pr-10"}
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                )}
               </div>
-              <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? "Logging in..." : "Login"}
+
+              {/* Error Display */}
+              {error && (
+                <div className="rounded-md bg-destructive/10 p-3">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoading || !selectedRole}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
+
+              {/* Links */}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{" "}
+                  <Link href="/register" className="text-primary hover:underline">
+                    Register here
+                  </Link>
+                </p>
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  Forgot your password?
+                </Link>
+              </div>
             </form>
           </CardContent>
         </Card>

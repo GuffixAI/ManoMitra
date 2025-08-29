@@ -1,22 +1,47 @@
 import express from "express";
-import {
-  registerStudent,
-  loginStudent,
-  updateStudentProfile,
-  connectCounsellor,
-  connectVolunteer,
-} from "../controllers/student.controller.js";
 import { protect } from "../middlewares/auth.middleware.js";
+import { requireRole } from "../middlewares/role.middleware.js";
+import { ROLES } from "../constants/roles.js";
+import {
+  getProfile,
+  updateProfile,
+  getDashboardData,
+  getAvailableCounsellors,
+  getAvailableVolunteers,
+  connectCounsellor,
+  disconnectCounsellor,
+  connectVolunteer,
+  disconnectVolunteer,
+  getConnections,
+  updatePreferences,
+  updateLastActive
+} from "../controllers/student.controller.js";
 
 const router = express.Router();
 
-// Public routes
-router.post("/register", registerStudent);
-router.post("/login", loginStudent);
+// All routes require authentication and student role
+router.use(protect, requireRole([ROLES.STUDENT]));
 
-// Protected routes
-router.put("/profile", protect, updateStudentProfile);
-router.post("/connect/counsellor", protect, connectCounsellor);
-router.post("/connect/volunteer", protect, connectVolunteer);
+// Profile management
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
+
+// Dashboard
+router.get("/dashboard", getDashboardData);
+
+// Available professionals
+router.get("/counsellors", getAvailableCounsellors);
+router.get("/volunteers", getAvailableVolunteers);
+
+// Connection management
+router.get("/connections", getConnections);
+router.post("/counsellors/connect", connectCounsellor);
+router.delete("/counsellors/:counsellorId", disconnectCounsellor);
+router.post("/volunteers/connect", connectVolunteer);
+router.delete("/volunteers/:volunteerId", disconnectVolunteer);
+
+// Preferences and activity
+router.put("/preferences", updatePreferences);
+router.post("/activity", updateLastActive);
 
 export default router;

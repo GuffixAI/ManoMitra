@@ -1,23 +1,41 @@
 import express from "express";
-import {
-  loginAdmin,
-  appointCounsellor,
-  appointVolunteer,
-    listCounsellors,
-  listVolunteers,
-} from "../controllers/admin.controller.js";
 import { protect } from "../middlewares/auth.middleware.js";
+import { requireRole } from "../middlewares/role.middleware.js";
+import {
+  getDashboardStats,
+  getAllStudents,
+  getAllCounsellors,
+  getAllVolunteers,
+  getAllReports,
+  assignReport,
+  updateUserStatus,
+  getSystemAnalytics,
+  emergencyAccess,
+  getUserById
+} from "../controllers/admin.controller.js";
+import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
-// Admin login route
-router.post("/login", loginAdmin);
+// All routes require admin role
+router.use(protect, requireRole([ROLES.ADMIN]));
 
-// Protected routes for admin only
-router.post("/appoint/counsellor", protect, appointCounsellor);
-router.post("/appoint/volunteer", protect, appointVolunteer);
+// Dashboard and analytics
+router.get("/dashboard/stats", getDashboardStats);
+router.get("/analytics", getSystemAnalytics);
 
-router.get("/counsellors", protect, listCounsellors);
-router.get("/volunteers", protect, listVolunteers);
+// User management
+router.get("/users/students", getAllStudents);
+router.get("/users/counsellors", getAllCounsellors);
+router.get("/users/volunteers", getAllVolunteers);
+router.get("/users/:userType/:userId", getUserById);
+router.patch("/users/status", updateUserStatus);
+
+// Report management
+router.get("/reports", getAllReports);
+router.patch("/reports/assign", assignReport);
+
+// Emergency access (requires special permission)
+router.post("/emergency", emergencyAccess);
 
 export default router;

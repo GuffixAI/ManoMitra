@@ -4,16 +4,38 @@ import express from "express";
 import { protect } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
 import { ROLES } from "../constants/roles.js";
-// No longer need upload middleware
-import { createMarkdownReport, listMyReports, getMyReport, deleteMyReport } from "../controllers/report.controller.js";
-import { sanitizeRequest } from "../middlewares/sanitize.middleware.js"; // Important for security
+import {
+  createReport,
+  getMyReports,
+  getReportById,
+  updateReport,
+  deleteReport,
+  getAssignedReports,
+  updateReportStatus,
+  getReportDetails,
+  getUrgentReports,
+  getReportsByStatus
+} from "../controllers/report.controller.js";
 
 const router = express.Router();
 
-// The POST route now accepts JSON. Sanitize the content.
-router.post("/", protect, requireRole([ROLES.STUDENT]), sanitizeRequest, createMarkdownReport);
-router.get("/", protect, requireRole([ROLES.STUDENT]), listMyReports);
-router.get("/:id", protect, requireRole([ROLES.STUDENT]), getMyReport);
-router.delete("/:id", protect, requireRole([ROLES.STUDENT]), deleteMyReport);
+// All routes require authentication
+router.use(protect);
+
+// Student routes
+router.post("/", requireRole([ROLES.STUDENT]), createReport);
+router.get("/my", requireRole([ROLES.STUDENT]), getMyReports);
+router.get("/my/:id", requireRole([ROLES.STUDENT]), getReportById);
+router.put("/my/:id", requireRole([ROLES.STUDENT]), updateReport);
+router.delete("/my/:id", requireRole([ROLES.STUDENT]), deleteReport);
+
+// Counsellor routes
+router.get("/assigned", requireRole([ROLES.COUNSELLOR]), getAssignedReports);
+router.get("/assigned/:id", requireRole([ROLES.COUNSELLOR]), getReportDetails);
+router.patch("/assigned/:id/status", requireRole([ROLES.COUNSELLOR]), updateReportStatus);
+
+// Admin and counsellor routes
+router.get("/urgent", requireRole([ROLES.ADMIN, ROLES.COUNSELLOR]), getUrgentReports);
+router.get("/status", requireRole([ROLES.ADMIN, ROLES.COUNSELLOR]), getReportsByStatus);
 
 export default router;

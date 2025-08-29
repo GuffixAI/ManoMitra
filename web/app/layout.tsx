@@ -6,6 +6,7 @@ import QueryProvider from "@/providers/query-provider";
 import AuthProvider from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,7 +31,9 @@ export default function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
               <Toaster />
             </AuthProvider>
           </QueryProvider>

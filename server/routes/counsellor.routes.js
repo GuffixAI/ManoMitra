@@ -1,21 +1,43 @@
 import express from "express";
-import {
-  registerCounsellor,
-  setAvailability,
-  getCounsellorRating,
-  getAvailability,
-} from "../controllers/counsellor.controller.js";
 import { protect } from "../middlewares/auth.middleware.js";
+import { requireRole } from "../middlewares/role.middleware.js";
+import { ROLES } from "../constants/roles.js";
+import {
+  getProfile,
+  updateProfile,
+  getMyStudents,
+  getSchedule,
+  updateAvailability,
+  getMyReports,
+  getPerformanceMetrics,
+  addStudent,
+  removeStudent,
+  getDashboardData
+} from "../controllers/counsellor.controller.js";
 
 const router = express.Router();
 
-// Public route for counsellor registration
-router.post("/register", registerCounsellor);
+// All routes require authentication and counsellor role
+router.use(protect, requireRole([ROLES.COUNSELLOR]));
 
-router.get("/:counsellorId/availability", getAvailability);
+// Profile management
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
 
-// Protected routes
-router.put("/availability", protect, setAvailability);
-router.get("/rating", protect, getCounsellorRating);
+// Student management
+router.get("/students", getMyStudents);
+router.post("/students", addStudent);
+router.delete("/students/:studentId", removeStudent);
+
+// Schedule and availability
+router.get("/schedule", getSchedule);
+router.put("/availability", updateAvailability);
+
+// Reports
+router.get("/reports", getMyReports);
+
+// Performance and analytics
+router.get("/performance", getPerformanceMetrics);
+router.get("/dashboard", getDashboardData);
 
 export default router;

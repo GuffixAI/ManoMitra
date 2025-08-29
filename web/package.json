@@ -6,10 +6,14 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next",
+    "install-deps": "npm install @radix-ui/react-avatar @radix-ui/react-tabs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
+    "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.7",

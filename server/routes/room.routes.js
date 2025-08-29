@@ -2,16 +2,29 @@ import express from "express";
 import { protect } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
 import { ROLES } from "../constants/roles.js";
-import { createRoom, listRooms, addModerator, removeModerator } from "../controllers/room.controller.js";
+import {
+  getAllRooms,
+  getRoomByTopic,
+  getRoomMessages,
+  getRoomStats,
+  addModerator,
+  removeModerator,
+  updateRoomDescription,
+  getRoomActivity
+} from "../controllers/room.controller.js";
 
 const router = express.Router();
 
-// Any authenticated user can list rooms
-router.get("/", protect, listRooms);
+// Public routes (no authentication required)
+router.get("/", getAllRooms);
+router.get("/:topic", getRoomByTopic);
+router.get("/:topic/messages", getRoomMessages);
+router.get("/:topic/stats", getRoomStats);
+router.get("/:topic/activity", getRoomActivity);
 
-// Admin only can create rooms and manage moderators
-router.post("/", protect, requireRole([ROLES.ADMIN]), createRoom);
-router.post("/:roomId/moderators", protect, requireRole([ROLES.ADMIN]), addModerator);
-router.delete("/:roomId/moderators", protect, requireRole([ROLES.ADMIN]), removeModerator);
+// Admin routes (require authentication and admin role)
+router.post("/moderators", protect, requireRole([ROLES.ADMIN]), addModerator);
+router.delete("/:topic/moderators/:volunteerId", protect, requireRole([ROLES.ADMIN]), removeModerator);
+router.put("/:topic/description", protect, requireRole([ROLES.ADMIN]), updateRoomDescription);
 
 export default router;
