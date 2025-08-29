@@ -11,7 +11,7 @@ interface DashboardLayoutProps {
   className?: string;
 }
 
-export function DashboardLayout({ children, className }: DashboardLayoutProps) {
+function DashboardLayout({ children, className }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -33,3 +33,6 @@ export function DashboardLayout({ children, className }: DashboardLayoutProps) {
     </div>
   );
 }
+
+
+export default DashboardLayout
