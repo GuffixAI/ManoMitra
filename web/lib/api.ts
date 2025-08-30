@@ -1,9 +1,9 @@
-// Comprehensive API service layer
+// web/lib/api.ts
 import { api } from './axios';
-import { 
-  User, 
-  LoginRequest, 
-  RegisterRequest, 
+import {
+  User,
+  LoginRequest,
+  RegisterRequest,
   AuthResponse,
   Student,
   Counsellor,
@@ -231,22 +231,22 @@ export const volunteerAPI = {
 // Admin API
 export const adminAPI = {
   getDashboardStats: async () => {
-    const response = await api.get('/admin/dashboard');
+    const response = await api.get('/admin/dashboard/stats');
     return response.data.data;
   },
 
   getAllStudents: async (params?: { limit?: number; offset?: number; search?: string; status?: string }) => {
-    const response = await api.get('/admin/students', { params });
+    const response = await api.get('/admin/users/students', { params });
     return response.data.data;
   },
 
   getAllCounsellors: async (params?: { limit?: number; offset?: number; search?: string; status?: string }) => {
-    const response = await api.get('/admin/counsellors', { params });
+    const response = await api.get('/admin/users/counsellors', { params });
     return response.data.data;
   },
 
   getAllVolunteers: async (params?: { limit?: number; offset?: number; search?: string; status?: string }) => {
-    const response = await api.get('/admin/volunteers', { params });
+    const response = await api.get('/admin/users/volunteers', { params });
     return response.data.data;
   },
 
@@ -353,7 +353,7 @@ export const bookingAPI = {
 // Report API
 export const reportAPI = {
   createReport: async (data: any) => {
-    const response = await api.post('/reports/my', data);
+    const response = await api.post('/reports', data);
     return response.data;
   },
 
@@ -489,10 +489,10 @@ export const roomAPI = {
 
 // Notification API
 export const notificationAPI = {
-  getUserNotifications: async (params?: { 
-    limit?: number; 
-    offset?: number; 
-    unreadOnly?: boolean; 
+  getUserNotifications: async (params?: {
+    limit?: number;
+    offset?: number;
+    unreadOnly?: boolean;
     category?: string;
     includeArchived?: boolean;
     includeExpired?: boolean;

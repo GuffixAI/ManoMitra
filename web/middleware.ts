@@ -1,60 +1,44 @@
-// middleware.ts
+// web/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-// Avoid hard-coupling to server secret; decode payload without verifying
-import { ROLES } from './lib/constants';
 
-// Note: We intentionally don't verify the JWT in middleware to avoid secret mismatch
+// These routes are accessible to unauthenticated users.
+const PUBLIC_ROUTES = [
+  '/',
+  '/splash',
+  '/login',
+  '/register',
+  '/auth/login',
+  '/auth/register',
+  '/forgot-password'
+];
 
-const AUTH_ROUTES = ['/login', '/register', '/auth/login', '/auth/register'];
-const PUBLIC_ROUTES = ['/', '/splash', ...AUTH_ROUTES];
-const DASHBOARD_ROOTS = {
-  [ROLES.STUDENT]: '/student',
-  [ROLES.COUNSELLOR]: '/counsellor',
-  [ROLES.VOLUNTEER]: '/volunteer',
-  [ROLES.ADMIN]: '/admin',
-};
+// Authenticated users trying to access these routes will be redirected to their dashboard.
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('token')?.value;
 
-  // If no token and trying to access a protected route
-  if (!token && !PUBLIC_ROUTES.some(p => pathname === p || pathname.startsWith(p + '/'))) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  const isPublicRoute = PUBLIC_ROUTES.some(p => pathname === p);
+
+  if (!token && !isPublicRoute) {
+    // If there's no token and the user is trying to access a protected route, redirect to login.
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', pathname); // You can use this to redirect back after login
+    return NextResponse.redirect(loginUrl);
   }
 
-  // If there is a token
   if (token) {
-    try {
-      // Decode JWT payload without verification (base64url)
-      const [, payloadB64Url] = token.split('.');
-      const base64 = payloadB64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const json = JSON.parse(globalThis.atob(base64));
-      const role = json.role as string;
-
-      // If authenticated, redirect from auth routes to their dashboard
-      if (AUTH_ROUTES.some(p => pathname.startsWith(p))) {
-        const dashboardUrl = DASHBOARD_ROOTS[role as keyof typeof DASHBOARD_ROOTS] || '/';
-        return NextResponse.redirect(new URL(dashboardUrl, request.url));
-      }
-
-      // Role-based route protection
-      const requiredRole = Object.keys(DASHBOARD_ROOTS).find(r => pathname.startsWith(DASHBOARD_ROOTS[r as keyof typeof DASHBOARD_ROOTS]));
-      
-      if (requiredRole && role !== requiredRole) {
-        const dashboardUrl = DASHBOARD_ROOTS[role as keyof typeof DASHBOARD_ROOTS] || '/login';
-        return NextResponse.redirect(new URL(dashboardUrl, request.url));
-      }
-
-    } catch (err) {
-      // If decoding fails, treat as unauthenticated
-      const response = NextResponse.redirect(new URL('/login', request.url));
-      response.cookies.delete('token');
-      return response;
+    // If there is a token and the user is on an auth route (like /login),
+    // we can attempt a soft redirect to a generic dashboard or home.
+    // The client-side logic in the page will handle the role-specific redirect.
+    if (AUTH_ROUTES.some(p => pathname.startsWith(p))) {
+      return NextResponse.redirect(new URL('/student', request.url)); // Default redirect, client will correct it
     }
   }
 
+  // Allow the request to proceed. Role-based logic will be handled client-side.
   return NextResponse.next();
 }
 
