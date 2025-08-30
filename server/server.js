@@ -1,3 +1,5 @@
+// FILE: server/server.js
+
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -116,32 +118,35 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
-// Enhanced JWT auth on WS with better error handling
+// Hardened JWT auth middleware for WebSocket connections
 io.use((socket, next) => {
-  try {
-    const token = socket.handshake.auth?.token || 
-                  socket.handshake.headers?.authorization?.split(" ")[1];
-    
-    if (!token) {
-      return next(new Error("Authentication token required"));
-    }
-    
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    if (!payload.id || !payload.role) {
-      return next(new Error("Invalid token payload"));
-    }
-    
-    socket.user = { id: payload.id, role: payload.role };
-    next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      next(new Error("Token expired"));
-    } else if (error.name === 'JsonWebTokenError') {
-      next(new Error("Invalid token"));
-    } else {
-      next(new Error("Authentication failed"));
-    }
+  const token = socket.handshake.auth?.token;
+  
+  if (!token) {
+    console.error('Socket Auth Error: No token provided.');
+    return next(new Error("Authentication error: Token not provided."));
   }
+  
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error(`Socket Auth Error: ${err.name} - ${err.message}`);
+      let errorMessage = "Authentication error";
+      if (err.name === 'TokenExpiredError') {
+        errorMessage = "Token expired. Please refresh.";
+      } else if (err.name === 'JsonWebTokenError') {
+        errorMessage = "Invalid token.";
+      }
+      return next(new Error(errorMessage));
+    }
+    
+    if (!decoded.id || !decoded.role) {
+      console.error('Socket Auth Error: Invalid token payload.');
+      return next(new Error("Authentication error: Invalid token payload."));
+    }
+    
+    socket.user = { id: decoded.id, role: decoded.role };
+    next();
+  });
 });
 
 // Peer support namespace with enhanced features
@@ -193,20 +198,20 @@ peer.on("connection", async (socket) => {
         .replace(/javascript:/gi, "")
         .replace(/on\w+=/gi, "");
       
-      const senderModel = socket.user.role === "volunteer" ? "Volunteer" : "Student";
+      const senderModel = socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1);
       
       const msg = await Message.create({ 
         room: roomId, 
         sender: socket.user.id, 
         senderModel, 
-        text: clean 
+        content: clean 
       });
       
       // Emit to room with enhanced data
       peer.to(roomId).emit("message", {
         id: msg._id, 
         roomId, 
-        text: msg.text, 
+        text: msg.content, 
         senderModel,
         senderId: socket.user.id,
         createdAt: msg.createdAt
@@ -236,10 +241,16 @@ peer.on("connection", async (socket) => {
       const msgs = await Message.find({ room: roomId })
         .sort({ createdAt: -1 })
         .skip(safeOffset)
-        .limit(safeLimit);
+        .limit(safeLimit)
+        .populate('sender', 'name'); // Populate sender name
       
       socket.emit("history", {
-        messages: msgs.reverse(),
+        messages: msgs.reverse().map(m => ({
+            id: m._id,
+            text: m.content,
+            senderModel: m.sender.name || m.senderModel, // Use name if available
+            createdAt: m.createdAt
+        })),
         hasMore: msgs.length === safeLimit,
         offset: safeOffset + safeLimit
       });
@@ -254,10 +265,11 @@ peer.on("connection", async (socket) => {
   });
 });
 
-// Error handling for socket connections
-io.on("error", (error) => {
-  console.error("Socket.IO error:", error);
+// Error handling for socket connection attempts
+io.on("connection_error", (err) => {
+  console.error(`Socket Connection Error: ${err.message}`);
 });
+
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
