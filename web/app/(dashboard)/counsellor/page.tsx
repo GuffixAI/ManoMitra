@@ -1,104 +1,85 @@
-// app/(dashboard)/counsellor/page.tsx
+// web/app/(dashboard)/counsellor/page.tsx
 "use client";
-import { useIncomingBookings, useUpdateBookingStatus } from "@/hooks/api/useBookings";
-import { Button } from "@/components/ui/button";
+import { useCounsellorDashboard } from "@/hooks/api/useCounsellors";
+import { useIncomingBookings } from "@/hooks/api/useBookings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { BarChart, Users, Calendar, FileText, AlertTriangle, ArrowRight } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
-import { Check, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 export default function CounsellorDashboardPage() {
-    const { data: bookings, isLoading } = useIncomingBookings();
-    const updateStatusMutation = useUpdateBookingStatus();
+    const { data: dashboardData, isLoading: isLoadingDashboard } = useCounsellorDashboard();
+    const { data: bookings, isLoading: isLoadingBookings } = useIncomingBookings();
 
-    const pendingBookings = bookings?.filter((b: any) => b.status === 'pending') || [];
-    const approvedBookings = bookings?.filter((b: any) => b.status === 'approved') || [];
+    const StatCard = ({ title, value, icon: Icon, link, linkText }: any) => (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{value}</div>
+                {link && (
+                    <Link href={link} className="text-xs text-muted-foreground flex items-center hover:text-primary">
+                        {linkText} <ArrowRight className="h-3 w-3 ml-1" />
+                    </Link>
+                )}
+            </CardContent>
+        </Card>
+    );
+
+    if (isLoadingDashboard || isLoadingBookings) {
+        return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+    }
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold">Incoming Bookings</h1>
-            {/* <Card>
-                <CardContent className="pt-6">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Time</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>
-                            : bookings?.filter((b: any) => b.status === 'pending').map((booking: any) => (
-                                <TableRow key={booking._id}>
-                                    <TableCell>{booking.student.name}</TableCell>
-                                    <TableCell>{dayjs(booking.start).format("MMM D, YYYY")}</TableCell>
-                                    <TableCell>{dayjs(booking.start).format("h:mm A")}</TableCell>
-                                    <TableCell>{booking.status}</TableCell>
-                                    <TableCell className="flex gap-2">
-                                        <Button size="icon" variant="outline" className="text-green-500" onClick={() => updateStatusMutation.mutate({ bookingId: booking._id, action: 'approve' })}>
-                                            <Check className="h-4 w-4"/>
-                                        </Button>
-                                        <Button size="icon" variant="outline" className="text-red-500" onClick={() => updateStatusMutation.mutate({ bookingId: booking._id, action: 'reject' })}>
-                                            <X className="h-4 w-4"/>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card> */}
+            <h1 className="text-3xl font-bold">Counsellor Dashboard</h1>
+            
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Connected Students" value={dashboardData?.students || 0} icon={Users} link="/counsellor/students" linkText="View Students" />
+                <StatCard title="Pending Bookings" value={dashboardData?.bookings.pending || 0} icon={Calendar} link="/counsellor/schedule" linkText="Manage Schedule" />
+                <StatCard title="Pending Reports" value={dashboardData?.reports.pending || 0} icon={FileText} link="/counsellor/reports" linkText="View Reports" />
+                <StatCard title="Urgent Reports" value={dashboardData?.reports.urgent || 0} icon={AlertTriangle} link="/counsellor/reports?priority=urgent" linkText="View Urgent" />
+            </div>
 
-
-            <Card>
-                <CardHeader><CardTitle>Pending Requests</CardTitle></CardHeader>
-                <CardContent className="pt-0">
-                    <Table>
-                        {/* TableHeader is fine */}
-                        <TableBody>
-                            {isLoading ? <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>
-                            : pendingBookings.length > 0 ? pendingBookings.map((booking: any) => (
-                                <TableRow key={booking._id}>
-                                    {/* TableCells for data */}
-                                    <TableCell className="flex gap-2">
-                                        <Button size="icon" variant="outline" className="text-green-500" onClick={() => updateStatusMutation.mutate({ bookingId: booking._id, action: 'approve' })}>
-                                            <Check className="h-4 w-4"/>
-                                        </Button>
-                                        <Button size="icon" variant="outline" className="text-red-500" onClick={() => updateStatusMutation.mutate({ bookingId: booking._id, action: 'reject' })}>
-                                            <X className="h-4 w-4"/>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            )) : <TableRow><TableCell colSpan={5} className="text-center">No pending requests.</TableCell></TableRow>}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            {/* Approved Appointments Section */}
-            <Card>
-                <CardHeader><CardTitle>Upcoming Approved Appointments</CardTitle></CardHeader>
-                <CardContent className="pt-0">
-                    <Table>
-                        {/* TableHeader without actions */}
-                        <TableBody>
-                            {isLoading ? <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>
-                            : approvedBookings.length > 0 ? approvedBookings.map((booking: any) => (
-                                <TableRow key={booking._id}>
-                                    <TableCell>{booking.student.name}</TableCell>
-                                    <TableCell>{dayjs(booking.start).format("MMM D, YYYY")}</TableCell>
-                                    <TableCell>{dayjs(booking.start).format("h:mm A")}</TableCell>
-                                    <TableCell><Badge>Approved</Badge></TableCell>
-                                </TableRow>
-                            )) : <TableRow><TableCell colSpan={4} className="text-center">No upcoming appointments.</TableCell></TableRow>}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Upcoming Appointments</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {bookings?.filter((b: any) => b.status === 'approved').slice(0, 5).map((booking: any) => (
+                            <div key={booking._id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <div>
+                                    <p className="font-semibold">{booking.student.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {dayjs(booking.start).format("MMM D, YYYY h:mm A")}
+                                    </p>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href="/counsellor/schedule">View</Link>
+                                </Button>
+                            </div>
+                        ))}
+                         {bookings?.filter((b: any) => b.status === 'approved').length === 0 && (
+                            <p className="text-sm text-center text-muted-foreground py-4">No upcoming appointments.</p>
+                         )}
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Quick Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Button variant="outline" className="w-full justify-start" asChild><Link href="/counsellor/schedule"><Calendar className="mr-2 h-4 w-4" /> Manage Schedule & Availability</Link></Button>
+                        <Button variant="outline" className="w-full justify-start" asChild><Link href="/counsellor/reports"><FileText className="mr-2 h-4 w-4" /> Review Assigned Reports</Link></Button>
+                        <Button variant="outline" className="w-full justify-start" asChild><Link href="/counsellor/students"><Users className="mr-2 h-4 w-4" /> View Connected Students</Link></Button>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
