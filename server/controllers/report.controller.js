@@ -4,6 +4,7 @@ import Report from "../models/report.model.js";
 import Student from "../models/student.model.js";
 import Counsellor from "../models/counsellor.model.js";
 import Notification from "../models/notification.model.js";
+import Admin from "../models/admin.model.js";
 
 // Student: Create a new report
 export const createReport = async (req, res) => {
@@ -32,9 +33,18 @@ export const createReport = async (req, res) => {
       $push: { reports: report._id }
     });
 
-    // NOTE: Notifying all admins of a new report might be noisy.
-    // A better approach would be to add it to an admin dashboard queue.
-    // For now, this is omitted, but can be added if required.
+    // FIX: Notify all admins that a new report has been created.
+    const admins = await Admin.find({ isActive: true }).select('_id');
+    const adminRecipients = admins.map(admin => ({ userId: admin._id, userModel: 'Admin' }));
+    
+    if (adminRecipients.length > 0) {
+      await Notification.createSystemNotification(
+          adminRecipients,
+          'report_assigned', // A general notification type
+          'New Student Report Submitted',
+          `A new report titled "${title}" has been submitted and requires attention.`
+      );
+    }
 
     res.status(201).json({ 
       success: true, 
@@ -90,6 +100,11 @@ export const getReportById = async (req, res) => {
 
     if (!report) {
       return res.status(404).json({ success: false, message: "Report not found" });
+    }
+
+    // FIX: Add a null-check for the report owner to prevent server crash.
+    if (!report.owner) {
+        return res.status(404).json({ success: false, message: "Report owner could not be found." });
     }
 
     // Check if the student owns this report or an admin/assigned counsellor is accessing it

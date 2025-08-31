@@ -6,28 +6,32 @@ import { toast } from "sonner";
 export const useCounsellorDashboard = () => {
     return useQuery({
       queryKey: ["counsellorDashboard"],
-      queryFn: () => counsellorAPI.getDashboard().then(res => res.data), // FIX: Unwrap data
+      // FIX: The API function already returns the nested data object. No need for .then() here.
+      queryFn: () => counsellorAPI.getDashboard(),
     });
 };
 
 export const useMyStudents = (params?: any) => {
     return useQuery({
         queryKey: ["myStudents", params],
-        queryFn: () => counsellorAPI.getMyStudents(params).then(res => res.data) // FIX: Unwrap data
+        // FIX: The API function already returns the nested data object.
+        queryFn: () => counsellorAPI.getMyStudents(params)
     });
 };
 
 export const useCounsellorSchedule = () => {
     return useQuery({
         queryKey: ["counsellorSchedule"],
-        queryFn: () => counsellorAPI.getSchedule().then(res => res.data) // FIX: Unwrap data
+        // FIX: The API function already returns the nested data object.
+        queryFn: () => counsellorAPI.getSchedule()
     });
 };
 
 export const useMyAssignedReports = (params?: any) => {
     return useQuery({
         queryKey: ["myAssignedReports", params],
-        queryFn: () => counsellorAPI.getMyReports(params) // This one already returns the correct structure
+        // This one was correct, but keeping for consistency.
+        queryFn: () => counsellorAPI.getMyReports(params)
     });
 };
 

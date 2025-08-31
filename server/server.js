@@ -124,8 +124,12 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
-// Hardened JWT auth middleware for WebSocket connections
-io.use((socket, next) => {
+// Peer support namespace with enhanced features
+const peer = io.of("/peer");
+
+// BUG FIX: Middleware moved from `io.use()` to `peer.use()`
+// This ensures authentication runs specifically for the /peer namespace.
+peer.use((socket, next) => {
   const token = socket.handshake.auth?.token;
 
   if (!token) {
@@ -177,8 +181,6 @@ io.use((socket, next) => {
   });
 });
 
-// Peer support namespace with enhanced features
-const peer = io.of("/peer");
 
 peer.on("connection", async (socket) => {
   console.log(`User ${socket.user.id} (${socket.user.role}) connected to peer support`);

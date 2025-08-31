@@ -7,7 +7,8 @@ const counsellorSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 6 },
-    specialization: { type: String,  trim: true, maxlength: 200 },
+    // FIX: Changed from String to an array of Strings to match validation schemas.
+    specialization: [{ type: String,  trim: true, maxlength: 200 }],
     description: { type: String, maxlength: 1000 },
     qualifications: [String],
     experience: { type: Number, min: 0, default: 0 },
