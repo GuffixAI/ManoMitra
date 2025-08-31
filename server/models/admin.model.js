@@ -38,7 +38,6 @@ const adminSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-adminSchema.index({ email: 1 });
 adminSchema.index({ isActive: 1 });
 adminSchema.index({ permissions: 1 });
 

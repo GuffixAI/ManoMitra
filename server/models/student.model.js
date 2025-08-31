@@ -44,8 +44,6 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Indexes for better performance
-studentSchema.index({ studentCode: 1 });
-studentSchema.index({ email: 1 });
 studentSchema.index({ isActive: 1 });
 studentSchema.index({ lastActive: -1 });
 

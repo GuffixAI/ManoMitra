@@ -69,7 +69,7 @@ export interface Counsellor extends BaseUser {
 // Volunteer interface matching backend model
 export interface Volunteer extends BaseUser {
   role: 'volunteer';
-  description?: string; // <-- FIX: Added missing property
+  description?: string;
   skills: string[];
   interests: string[];
   experience: number;

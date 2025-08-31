@@ -71,8 +71,17 @@ router.post("/socket-token", protect, (req, res) => {
   }
 });
 
-// @desc Logout (client-side token removal)
-router.post("/logout", protect, (req, res) => {
+// @desc Logout
+router.post("/logout", (req, res) => {
+  // Instruct the client to clear the token.
+  // If using httpOnly cookies, this is where you would clear it.
+  res.cookie('token', '', {
+    httpOnly: true,
+    expires: new Date(0),
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
   res.status(200).json({ 
     success: true, 
     message: "Logout successful. Please remove the token from client storage." 

@@ -28,7 +28,7 @@ router.get("/analytics", getSystemAnalytics);
 router.get("/users/students", getAllStudents);
 router.get("/users/counsellors", getAllCounsellors);
 router.get("/users/volunteers", getAllVolunteers);
-router.get("/users/:userType/:userId", getUserById);
+router.get("/users/:userModel/:userId", getUserById);
 router.patch("/users/status", updateUserStatus);
 
 // Report management

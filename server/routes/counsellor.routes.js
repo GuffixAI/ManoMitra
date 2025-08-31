@@ -18,30 +18,29 @@ import {
 
 const router = express.Router();
 
+const counsellorOnly = [protect, requireRole([ROLES.COUNSELLOR])];
+
 // This route is public for students to see availability before booking
 router.get("/:id/availability", getAvailabilityById);
 
-// All subsequent routes require authentication and counsellor role
-router.use(protect, requireRole([ROLES.COUNSELLOR]));
-
 // Profile management
-router.get("/profile", getProfile);
-router.put("/profile", updateProfile);
+router.get("/profile", counsellorOnly, getProfile);
+router.put("/profile", counsellorOnly, updateProfile);
 
 // Student management
-router.get("/students", getMyStudents);
-router.post("/students", addStudent);
-router.delete("/students/:studentId", removeStudent);
+router.get("/students", counsellorOnly, getMyStudents);
+router.post("/students", counsellorOnly, addStudent);
+router.delete("/students/:studentId", counsellorOnly, removeStudent);
 
 // Schedule and availability
-router.get("/schedule", getSchedule);
-router.put("/availability", updateAvailability);
+router.get("/schedule", counsellorOnly, getSchedule);
+router.put("/availability", counsellorOnly, updateAvailability);
 
 // Reports
-router.get("/reports", getMyReports);
+router.get("/reports", counsellorOnly, getMyReports);
 
 // Performance and analytics
-router.get("/performance", getPerformanceMetrics);
-router.get("/dashboard", getDashboardData);
+router.get("/performance", counsellorOnly, getPerformanceMetrics);
+router.get("/dashboard", counsellorOnly, getDashboardData);
 
 export default router;

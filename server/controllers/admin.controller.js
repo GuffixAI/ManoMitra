@@ -371,10 +371,10 @@ export const emergencyAccess = async (req, res) => {
 // Get user details by ID
 export const getUserById = async (req, res) => {
   try {
-    const { userId, userType } = req.params;
+    const { userId, userModel } = req.params;
     
     let user;
-    switch (userType) {
+    switch (userModel) {
       case 'student':
         user = await Student.findById(userId)
           .select('-password')
