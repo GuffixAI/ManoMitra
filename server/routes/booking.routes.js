@@ -6,11 +6,8 @@ import {
   createBooking,
   getMyBookings,
   getBookingById,
-  updateBooking,
   cancelBooking,
-  rescheduleBooking,
   getCounsellorBookings,
-  getCounsellorSchedule,
   getAvailableSlots,
   confirmBooking,
   rejectBooking,
@@ -20,29 +17,32 @@ import {
 
 const router = express.Router();
 
-// Student routes
-router.use("/student", protect, requireRole([ROLES.STUDENT]));
-router.post("/student", createBooking);
-router.get("/student", getMyBookings);
-router.get("/student/:id", getBookingById);
-router.put("/student/:id", updateBooking);
-router.delete("/student/:id", cancelBooking);
-router.put("/student/:id/reschedule", rescheduleBooking);
+// --- Student Routes ---
+const studentRouter = express.Router();
+studentRouter.use(protect, requireRole([ROLES.STUDENT]));
+studentRouter.post("/", createBooking);
+studentRouter.get("/", getMyBookings);
+studentRouter.get("/:id", getBookingById);
+studentRouter.delete("/:id", cancelBooking); // Corrected to DELETE
+router.use("/student", studentRouter);
 
-// Counsellor routes
-router.use("/counsellor", protect, requireRole([ROLES.COUNSELLOR]));
-router.get("/counsellor", getCounsellorBookings);
-router.get("/counsellor/schedule", getCounsellorSchedule);
-router.get("/counsellor/slots", getAvailableSlots);
-router.put("/counsellor/:id/confirm", confirmBooking);
-router.put("/counsellor/:id/reject", rejectBooking);
-router.put("/counsellor/:id/complete", completeBooking);
+// --- Counsellor Routes ---
+const counsellorRouter = express.Router();
+counsellorRouter.use(protect, requireRole([ROLES.COUNSELLOR]));
+counsellorRouter.get("/", getCounsellorBookings);
+counsellorRouter.put("/:id/confirm", confirmBooking);
+counsellorRouter.put("/:id/reject", rejectBooking);
+counsellorRouter.put("/:id/complete", completeBooking);
+router.use("/counsellor", counsellorRouter);
 
-// Public routes (for checking availability)
+// --- Admin Routes ---
+const adminRouter = express.Router();
+adminRouter.use(protect, requireRole([ROLES.ADMIN]));
+adminRouter.get("/stats", getBookingStats);
+router.use("/admin", adminRouter);
+
+// --- Public Routes ---
+// For checking counsellor availability before booking
 router.get("/slots/:counsellorId", getAvailableSlots);
-
-// Admin routes
-router.use("/admin", protect, requireRole([ROLES.ADMIN]));
-router.get("/admin/stats", getBookingStats);
 
 export default router;

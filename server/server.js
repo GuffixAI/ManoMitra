@@ -14,10 +14,16 @@ import { PEER_TOPICS } from "./constants/peer.js";
 import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
+import sanitizeHtml from "sanitize-html";
 
-// Models for WS
+// Models
 import Room from "./models/room.model.js";
 import Message from "./models/message.model.js";
+import Student from "./models/student.model.js";
+import Counsellor from "./models/counsellor.model.js";
+import Volunteer from "./models/volunteer.model.js";
+import Admin from "./models/admin.model.js";
+
 
 dotenv.config();
 const app = express();
@@ -67,9 +73,9 @@ app.use("/uploads", express.static("uploads"));
 
 // Health check endpoint
 app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    success: true, 
-    message: "Server is running", 
+  res.status(200).json({
+    success: true,
+    message: "Server is running",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development"
   });
@@ -109,10 +115,10 @@ app.use(errorHandler);
 import http from "http";
 import { Server } from "socket.io";
 const server = http.createServer(app);
-const io = new Server(server, { 
-  cors: { 
+const io = new Server(server, {
+  cors: {
     origin: process.env.CLIENT_URL || "http://localhost:3000",
-    credentials: true 
+    credentials: true
   },
   pingTimeout: 60000,
   pingInterval: 25000
@@ -121,13 +127,13 @@ const io = new Server(server, {
 // Hardened JWT auth middleware for WebSocket connections
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
-  
+
   if (!token) {
     console.error('Socket Auth Error: No token provided.');
     return next(new Error("Authentication error: Token not provided."));
   }
-  
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+
+  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
     if (err) {
       console.error(`Socket Auth Error: ${err.name} - ${err.message}`);
       let errorMessage = "Authentication error";
@@ -138,14 +144,36 @@ io.use((socket, next) => {
       }
       return next(new Error(errorMessage));
     }
-    
+
     if (!decoded.id || !decoded.role) {
       console.error('Socket Auth Error: Invalid token payload.');
       return next(new Error("Authentication error: Invalid token payload."));
     }
-    
-    socket.user = { id: decoded.id, role: decoded.role };
-    next();
+
+    // Fetch user details to attach to socket
+    try {
+      let user;
+      const roleCapitalized = decoded.role.charAt(0).toUpperCase() + decoded.role.slice(1);
+
+      switch (roleCapitalized) {
+        case 'Student': user = await Student.findById(decoded.id).select('name email').lean(); break;
+        case 'Counsellor': user = await Counsellor.findById(decoded.id).select('name email').lean(); break;
+        case 'Volunteer': user = await Volunteer.findById(decoded.id).select('name email').lean(); break;
+        case 'Admin': user = await Admin.findById(decoded.id).select('name email').lean(); break;
+        default: return next(new Error("Authentication error: Unknown role."));
+      }
+
+      if (!user) {
+        return next(new Error("Authentication error: User not found."));
+      }
+      
+      socket.user = { id: decoded.id, role: decoded.role, name: user.name, email: user.email };
+      next();
+
+    } catch (dbError) {
+      console.error('Socket Auth DB Error:', dbError);
+      return next(new Error("Authentication error: Could not verify user."));
+    }
   });
 });
 
@@ -154,26 +182,27 @@ const peer = io.of("/peer");
 
 peer.on("connection", async (socket) => {
   console.log(`User ${socket.user.id} (${socket.user.role}) connected to peer support`);
-  
+
   // Join room
   socket.on("join", async ({ topic }) => {
     try {
       if (!PEER_TOPICS.includes(topic)) {
         return socket.emit("error", { message: "Invalid topic" });
       }
-      
+
       let room = await Room.findOne({ topic });
       if (!room) {
         room = await Room.create({ topic, description: `Support room for ${topic}` });
       }
-      
+
       socket.join(room._id.toString());
       socket.emit("joined", { roomId: room._id, topic });
-      
+
       // Notify others in room
-      socket.to(room._id.toString()).emit("userJoined", { 
-        userId: socket.user.id, 
-        role: socket.user.role 
+      socket.to(room._id.toString()).emit("userJoined", {
+        userId: socket.user.id,
+        role: socket.user.role,
+        name: socket.user.name,
       });
     } catch (error) {
       socket.emit("error", { message: "Failed to join room" });
@@ -186,34 +215,40 @@ peer.on("connection", async (socket) => {
       if (!roomId || !text || typeof text !== 'string') {
         return socket.emit("error", { message: "Invalid message data" });
       }
-      
+
       if (text.length > 2000) {
         return socket.emit("error", { message: "Message too long" });
       }
       
-      // Enhanced sanitization
-      const clean = text
-        .slice(0, 2000)
-        .replace(/<[^>]*>?/gm, "")
-        .replace(/javascript:/gi, "")
-        .replace(/on\w+=/gi, "");
-      
-      const senderModel = socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1);
-      
-      const msg = await Message.create({ 
-        room: roomId, 
-        sender: socket.user.id, 
-        senderModel, 
-        content: clean 
+      // Enhanced sanitization using sanitize-html
+      const cleanText = sanitizeHtml(text.slice(0, 2000), {
+        allowedTags: [],
+        allowedAttributes: {},
       });
       
+      if (!cleanText.trim()) {
+         return socket.emit("error", { message: "Message cannot be empty" });
+      }
+
+      const senderModel = socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1);
+
+      const msg = await Message.create({
+        room: roomId,
+        sender: socket.user.id,
+        senderModel,
+        content: cleanText
+      });
+
       // Emit to room with enhanced data
       peer.to(roomId).emit("message", {
-        id: msg._id, 
-        roomId, 
-        text: msg.content, 
-        senderModel,
-        senderId: socket.user.id,
+        id: msg._id,
+        roomId,
+        text: msg.content,
+        sender: {
+          id: socket.user.id,
+          name: socket.user.name,
+          role: socket.user.role,
+        },
         createdAt: msg.createdAt
       });
     } catch (error) {
@@ -225,9 +260,10 @@ peer.on("connection", async (socket) => {
   // Typing indicator
   socket.on("typing", ({ roomId, typing }) => {
     if (roomId && typeof typing === 'boolean') {
-      socket.to(roomId).emit("typing", { 
-        userId: socket.user.id, 
-        typing: !!typing 
+      socket.to(roomId).emit("typing", {
+        userId: socket.user.id,
+        name: socket.user.name,
+        typing: !!typing
       });
     }
   });
@@ -237,18 +273,22 @@ peer.on("connection", async (socket) => {
     try {
       const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
       const safeOffset = Math.max(parseInt(offset) || 0, 0);
-      
+
       const msgs = await Message.find({ room: roomId })
         .sort({ createdAt: -1 })
         .skip(safeOffset)
         .limit(safeLimit)
-        .populate('sender', 'name'); // Populate sender name
-      
+        .populate('sender', 'name role'); // Populate sender details
+
       socket.emit("history", {
         messages: msgs.reverse().map(m => ({
             id: m._id,
             text: m.content,
-            senderModel: m.sender.name || m.senderModel, // Use name if available
+            sender: {
+                id: m.sender?._id,
+                name: m.sender?.name || m.senderModel, // Use name if available
+                role: m.sender?.role || m.senderModel.toLowerCase()
+            },
             createdAt: m.createdAt
         })),
         hasMore: msgs.length === safeLimit,

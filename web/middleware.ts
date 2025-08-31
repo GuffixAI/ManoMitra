@@ -14,31 +14,30 @@ const PUBLIC_ROUTES = [
 ];
 
 // Authenticated users trying to access these routes will be redirected to their dashboard.
-const AUTH_ROUTES = ['/login', '/register', '/forgot-password'];
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/auth/login', '/auth/register'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('token')?.value;
 
   const isPublicRoute = PUBLIC_ROUTES.some(p => pathname === p);
+  const isAuthRoute = AUTH_ROUTES.some(p => pathname === p);
 
+  // If there's no token and the user is trying to access a protected route, redirect to login.
   if (!token && !isPublicRoute) {
-    // If there's no token and the user is trying to access a protected route, redirect to login.
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('next', pathname); // You can use this to redirect back after login
+    loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (token) {
-    // If there is a token and the user is on an auth route (like /login),
-    // we can attempt a soft redirect to a generic dashboard or home.
-    // The client-side logic in the page will handle the role-specific redirect.
-    if (AUTH_ROUTES.some(p => pathname.startsWith(p))) {
-      return NextResponse.redirect(new URL('/student', request.url)); // Default redirect, client will correct it
-    }
+  // If there is a token and the user is on an auth route (like /login or /register),
+  // redirect them to a generic dashboard page. The client-side logic on that page
+  // will then handle the final role-specific redirection. This prevents UI flashing.
+  if (token && isAuthRoute) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Allow the request to proceed. Role-based logic will be handled client-side.
+  // Allow the request to proceed.
   return NextResponse.next();
 }
 

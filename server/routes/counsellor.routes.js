@@ -12,12 +12,16 @@ import {
   getPerformanceMetrics,
   addStudent,
   removeStudent,
-  getDashboardData
+  getDashboardData,
+  getAvailabilityById
 } from "../controllers/counsellor.controller.js";
 
 const router = express.Router();
 
-// All routes require authentication and counsellor role
+// This route is public for students to see availability before booking
+router.get("/:id/availability", getAvailabilityById);
+
+// All subsequent routes require authentication and counsellor role
 router.use(protect, requireRole([ROLES.COUNSELLOR]));
 
 // Profile management

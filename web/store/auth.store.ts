@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true, // Start with loading true to check for existing session
       error: null,
 
       // Synchronous actions
@@ -42,7 +42,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         if (typeof document !== 'undefined') {
-          document.cookie = `token=; path=/; max-age=0`;
+          // Clear the token cookie by setting its expiration date to the past
+          document.cookie = `token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         }
         set({ 
           user: null, 
@@ -68,14 +69,11 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null });
           
           const response = await authAPI.login(credentials);
-
-          console.log(response)
           
           if (response.success && response?.user) {
-            // Persist token in cookie for middleware and API calls
             if (response.token && typeof document !== 'undefined') {
               const sevenDays = 7 * 24 * 60 * 60;
-              document.cookie = `token=${encodeURIComponent(response.token)}; path=/; max-age=${sevenDays}`;
+              document.cookie = `token=${encodeURIComponent(response.token)}; path=/; max-age=${sevenDays}; SameSite=Lax`;
             }
             set({ 
               user: response.user, 
@@ -86,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
             return true;
           } else {
             set({ 
-              error: response.message || 'Login failed', 
+              error: (response as any).message || 'Login failed', 
               isLoading: false 
             });
             return false;
@@ -117,8 +115,7 @@ export const useAuthStore = create<AuthState>()(
               throw new Error('Invalid role');
           }
           
-          if (response.success && response.user) {
-            // Do NOT auto-authenticate on registration. Let the user log in.
+          if (response.success) {
             set({ isLoading: false, error: null });
             return true;
           } else {
@@ -137,32 +134,17 @@ export const useAuthStore = create<AuthState>()(
 
       refreshUser: async () => {
         try {
-          set({ isLoading: true, error: null });
-          
-          const response = await authAPI.getMe();
-          
-          if (response.user) {
-            set({ 
-              user: response.user, 
-              isAuthenticated: true, 
-              error: null,
-              isLoading: false 
-            });
+          const { user } = get();
+          // Only refresh if there's no user but a token might exist
+          if (!user && (typeof document !== 'undefined' && document.cookie.includes('token='))) {
+            set({ isLoading: true, error: null });
+            const response = await authAPI.getMe();
+            set({ user: response.user, isAuthenticated: true, isLoading: false });
           } else {
-            set({ 
-              user: null, 
-              isAuthenticated: false, 
-              error: null,
-              isLoading: false 
-            });
+             set({ isLoading: false });
           }
         } catch (error: any) {
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
-            error: null,
-            isLoading: false 
-          });
+          get().logout(); // Logout if refresh fails
         }
       },
 
@@ -177,30 +159,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-// Selectors for better performance
-export const useUser = () => useAuthStore((state) => state.user);
-export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
-export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
-export const useAuthError = () => useAuthStore((state) => state.error);
-
-// Role-based selectors
-export const useUserRole = () => useAuthStore((state) => state.user?.role);
-export const useIsStudent = () => useAuthStore((state) => state.user?.role === 'student');
-export const useIsCounsellor = () => useAuthStore((state) => state.user?.role === 'counsellor');
-export const useIsVolunteer = () => useAuthStore((state) => state.user?.role === 'volunteer');
-export const useIsAdmin = () => useAuthStore((state) => state.user?.role === 'admin');
-
-// Permission-based selectors
-export const useHasPermission = (permission: string) => {
-  const user = useAuthStore((state) => state.user);
-  if (user?.role === 'admin') {
-    return (user as any).permissions?.includes(permission) || false;
-  }
-  return false;
-};
-
-// User info selectors
-export const useUserName = () => useAuthStore((state) => state.user?.name);
-export const useUserEmail = () => useAuthStore((state) => state.user?.email);
-export const useUserId = () => useAuthStore((state) => state.user?._id);

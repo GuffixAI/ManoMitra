@@ -1,66 +1,52 @@
 // components/forms/CreateBookingForm.tsx
 "use client";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { api } from "@/lib/axios";
 import { useCreateBooking } from "@/hooks/api/useBookings";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import dayjs from "dayjs";
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-
-
-
-const generateTimeSlots = (dayAvailability) => {
-    if (!dayAvailability || !dayAvailability.slots) return [];
-    const slots = [];
-    dayAvailability.slots.forEach(slot => {
-        let current = dayjs().hour(parseInt(slot.start.split(':')[0])).minute(parseInt(slot.start.split(':')[1]));
-        const end = dayjs().hour(parseInt(slot.end.split(':')[0])).minute(parseInt(slot.end.split(':')[1]));
-        while(current.isBefore(end)) {
-            slots.push(current.format('HH:mm'));
-            current = current.add(1, 'hour'); // Assuming 1 hour slots
-        }
-    });
-    return slots;
-};
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { studentAPI, bookingAPI } from "@/lib/api";
 
 export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boolean) => void }) {
-    const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm();
+    const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm();
     const createBookingMutation = useCreateBooking();
     
-    // Fetch counsellors for the dropdown
-    const { data: counsellors } = useQuery({
-        queryKey: ["allCounsellorsForBooking"],
-        queryFn: () => api.get('/admin/counsellors').then(res => res.data.data),
+    const { data: counsellors, isLoading: isLoadingCounsellors } = useQuery({
+        queryKey: ["availableCounsellors"],
+        queryFn: () => studentAPI.getAvailableCounsellors(),
     });
 
-    const [date, setDate] = useState<Date | undefined>();
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const selectedCounsellorId = watch("counsellorId");
-    const selectedDate = watch("start");
-
-
-    const { data: availability, isLoading: isLoadingAvailability } = useQuery({
-        queryKey: ["counsellorAvailability", selectedCounsellorId],
-        queryFn: () => api.get(`/counsellors/${selectedCounsellorId}/availability`).then(res => res.data.data),
-        enabled: !!selectedCounsellorId, // Only run this query when a counsellor is selected
+    
+    const { data: availableSlots, isLoading: isLoadingAvailability } = useQuery({
+        queryKey: ["counsellorSlots", selectedCounsellorId, selectedDate],
+        queryFn: () => bookingAPI.getAvailableSlots(selectedCounsellorId, dayjs(selectedDate).format('YYYY-MM-DD')),
+        enabled: !!selectedCounsellorId && !!selectedDate,
     });
 
-    const dayOfWeek = selectedDate ? dayjs(selectedDate).format('dddd').toLowerCase() : null;
-    const availableSlots = availability && dayOfWeek 
-        ? generateTimeSlots(availability.find(d => d.day.toLowerCase() === dayOfWeek)) 
-        : [];
-
+    useEffect(() => {
+        // Reset time slot when counsellor or date changes
+        setValue("time", undefined);
+    }, [selectedCounsellorId, selectedDate, setValue]);
 
     const onSubmit = (data: any) => {
-        const start = dayjs(data.start).hour(parseInt(data.time.split(':')[0])).minute(0).second(0);
-        const end = start.add(1, 'hour'); // Assuming 1-hour slots
+        if (!selectedDate) return;
+        
+        const start = dayjs(selectedDate)
+            .hour(parseInt(data.time.split(':')[0]))
+            .minute(parseInt(data.time.split(':')[1]))
+            .second(0);
+        
+        const end = start.add(1, 'hour');
         
         const bookingData = {
             counsellorId: data.counsellorId,
@@ -70,26 +56,33 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
         };
         
         createBookingMutation.mutate(bookingData, {
-            onSuccess: () => setDialogOpen(false)
+            onSuccess: () => {
+                if(setDialogOpen) setDialogOpen(false);
+            }
         });
     };
-
-    
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
                 <Label>Counsellor</Label>
-                <Select onValueChange={value => setValue('counsellorId', value, { shouldValidate: true })}>
-                    <SelectTrigger><SelectValue placeholder="Select a counsellor" /></SelectTrigger>
-                    <SelectContent>
-                        {counsellors?.map((c: any) => <SelectItem key={c._id} value={c._id}>{c.name} - {c.specialization}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <input type="hidden" {...register('counsellorId', { required: true })} />
+                <Controller
+                    name="counsellorId"
+                    control={control}
+                    rules={{ required: "Please select a counsellor" }}
+                    render={({ field }) => (
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingCounsellors}>
+                            <SelectTrigger><SelectValue placeholder={isLoadingCounsellors ? "Loading..." : "Select a counsellor"} /></SelectTrigger>
+                            <SelectContent>
+                                {counsellors?.map((c: any) => <SelectItem key={c._id} value={c._id}>{c.name} - {c.specialization}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
+                {errors.counsellorId && <p className="text-sm text-destructive mt-1">{`${errors.counsellorId.message}`}</p>}
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <Label>Date</Label>
                     <Popover>
@@ -99,38 +92,46 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
                                 {selectedDate ? dayjs(selectedDate).format('MMM D, YYYY') : <span>Pick a date</span>}
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={date} onSelect={(d) => { setDate(d); setValue('start', d, { shouldValidate: true })}} initialFocus /></PopoverContent>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus disabled={(date) => date < new Date() || date > dayjs().add(1, 'month').toDate()} />
+                        </PopoverContent>
                     </Popover>
-                    <input type="hidden" {...register('start', { required: true })} />
                 </div>
                 <div>
                     <Label>Time Slot</Label>
-                    <Select onValueChange={value => setValue('time', value, { shouldValidate: true })} disabled={!selectedDate || !selectedCounsellorId || availableSlots.length === 0}>
-                        <SelectTrigger>
-                            <SelectValue placeholder={isLoadingAvailability ? "Loading..." : "Select time"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                           {availableSlots.length > 0 ? (
-                               availableSlots.map(slot => (
-                                   <SelectItem key={slot} value={slot}>{dayjs().hour(parseInt(slot.split(':')[0])).minute(parseInt(slot.split(':')[1])).format('h:mm A')}</SelectItem>
-                               ))
-                           ) : (
-                               <SelectItem value="none" disabled>No slots available</SelectItem>
-                           )}
-                        </SelectContent>
-                    </Select>
-                    
-                     <input type="hidden" {...register('time', { required: true })} />
+                    <Controller
+                        name="time"
+                        control={control}
+                        rules={{ required: "Please select a time slot" }}
+                        render={({ field }) => (
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedDate || !selectedCounsellorId || isLoadingAvailability}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder={isLoadingAvailability ? "Loading..." : "Select time"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                   {availableSlots && availableSlots.length > 0 ? (
+                                       availableSlots.map((slot: string) => (
+                                           <SelectItem key={slot} value={slot}>{dayjs().hour(parseInt(slot.split(':')[0])).minute(parseInt(slot.split(':')[1])).format('h:mm A')}</SelectItem>
+                                       ))
+                                   ) : (
+                                       <SelectItem value="none" disabled>No slots available</SelectItem>
+                                   )}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    />
+                    {errors.time && <p className="text-sm text-destructive mt-1">{`${errors.time.message}`}</p>}
                 </div>
             </div>
 
             <div>
                 <Label htmlFor="notes">Notes (Optional)</Label>
-                <Textarea id="notes" {...register("notes")} />
+                <Textarea id="notes" {...register("notes")} placeholder="Anything you'd like the counsellor to know beforehand?"/>
             </div>
             
             <Button type="submit" className="w-full" disabled={createBookingMutation.isPending}>
-                {createBookingMutation.isPending ? "Submitting..." : "Request Booking"}
+                {createBookingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Request Booking
             </Button>
         </form>
     );

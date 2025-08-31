@@ -281,7 +281,8 @@ export const loginAdmin = async (req, res) => {
       user: { 
         _id: admin._id,
         email: admin.email, 
-        role: admin.role
+        role: admin.role,
+        name: admin.name,
       } 
     });
   } catch (err) {
@@ -298,22 +299,16 @@ export const universalLogin = async (req, res) => {
     }
     
     let user;
+    let model;
     switch (role) {
-      case ROLES.STUDENT:
-        user = await Student.findOne({ email });
-        break;
-      case ROLES.COUNSELLOR:
-        user = await Counsellor.findOne({ email });
-        break;
-      case ROLES.VOLUNTEER:
-        user = await Volunteer.findOne({ email });
-        break;
-      case ROLES.ADMIN:
-        user = await Admin.findOne({ email });
-        break;
-      default:
-        return res.status(400).json({ success: false, message: "Invalid role" });
+      case ROLES.STUDENT: model = Student; break;
+      case ROLES.COUNSELLOR: model = Counsellor; break;
+      case ROLES.VOLUNTEER: model = Volunteer; break;
+      case ROLES.ADMIN: model = Admin; break;
+      default: return res.status(400).json({ success: false, message: "Invalid role" });
     }
+
+    user = await model.findOne({ email });
     
     if (!user) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
@@ -349,4 +344,45 @@ export const universalLogin = async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
+};
+
+// Change Password for logged-in user
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: "New password must be at least 6 characters long" });
+        }
+
+        let model;
+        switch (req.user.role) {
+            case ROLES.STUDENT: model = Student; break;
+            case ROLES.COUNSELLOR: model = Counsellor; break;
+            case ROLES.VOLUNTEER: model = Volunteer; break;
+            case ROLES.ADMIN: model = Admin; break;
+            default: return res.status(400).json({ success: false, message: "Invalid user role" });
+        }
+        
+        const user = await model.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: "Incorrect current password" });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Password updated successfully" });
+
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 };

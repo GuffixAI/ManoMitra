@@ -9,7 +9,8 @@ import {
   loginVolunteer,
   registerVolunteer,
   loginAdmin,
-  universalLogin
+  universalLogin,
+  changePassword
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -28,11 +29,14 @@ router.post("/student/register", registerStudent);
 router.post("/counsellor/register", registerCounsellor);
 router.post("/volunteer/register", registerVolunteer);
 
+// @desc Change password for authenticated user
+router.post("/change-password", protect, changePassword);
+
 // @desc Verify token & fetch current user info
 router.get("/me", protect, (req, res) => {
   res.status(200).json({
     success: true,
-    user: req.user,
+    user: req.userDetails, // Use req.userDetails which is the full user object
   });
 });
 
@@ -40,7 +44,7 @@ router.get("/me", protect, (req, res) => {
 router.post("/refresh", protect, async (req, res) => {
   try {
     const token = jwt.sign(
-      { id: req.user._id, role: req.user.role },
+      { id: req.user.id, role: req.user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE || "7d" }
     );
@@ -57,7 +61,7 @@ router.post("/socket-token", protect, (req, res) => {
     // The `protect` middleware has already verified the user's main session
     // Now, we create a new, temporary token for the socket
     const socketToken = jwt.sign(
-      { id: req.user._id, role: req.user.role },
+      { id: req.user.id, role: req.user.role },
       process.env.JWT_SECRET,
       { expiresIn: '30s' } // Short expiry
     );
