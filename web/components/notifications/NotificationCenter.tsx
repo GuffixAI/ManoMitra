@@ -1,4 +1,5 @@
 // web/components/notifications/NotificationCenter.tsx
+
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationAPI } from "@/lib/api";
@@ -19,6 +20,9 @@ export function NotificationCenter() {
     queryFn: () => notificationAPI.getUserNotifications({ limit: 50 }),
   });
 
+  // Correctly access the nested notifications array
+  const notifications = data?.data?.notifications || [];
+
   const markAllReadMutation = useMutation({
     mutationFn: () => notificationAPI.markAllAsRead(),
     onSuccess: () => {
@@ -35,7 +39,8 @@ export function NotificationCenter() {
             <Button 
                 variant="outline" 
                 onClick={() => markAllReadMutation.mutate()}
-                disabled={markAllReadMutation.isPending || !data?.notifications.some((n:any) => !n.isRead)}
+                // FIX: Access notifications from the `notifications` constant
+                disabled={markAllReadMutation.isPending || !notifications.some((n:any) => !n.isRead)}
             >
                 <CheckCheck className="mr-2 h-4 w-4" /> Mark all as read
             </Button>
@@ -44,7 +49,8 @@ export function NotificationCenter() {
             <CardContent className="pt-6">
                 {isLoading && <div className="flex justify-center py-8"><Spinner size="lg" /></div>}
 
-                {!isLoading && data?.notifications.length === 0 && (
+                {/* FIX: Check the length of the `notifications` constant */}
+                {!isLoading && notifications.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
                         <BellOff className="mx-auto h-12 w-12 mb-4" />
                         <h3 className="text-lg font-semibold">All caught up!</h3>
@@ -52,9 +58,10 @@ export function NotificationCenter() {
                     </div>
                 )}
 
-                {!isLoading && data?.notifications.length > 0 && (
+                {/* FIX: Map over the `notifications` constant */}
+                {!isLoading && notifications.length > 0 && (
                     <div className="space-y-4">
-                        {data.notifications.map((notif: any) => (
+                        {notifications.map((notif: any) => (
                             <div key={notif._id} className={`flex items-start gap-4 p-4 rounded-lg border ${!notif.isRead ? 'bg-muted/50' : ''}`}>
                                 <div className={`mt-1 h-2 w-2 rounded-full ${!notif.isRead ? 'bg-primary' : 'bg-transparent'}`} />
                                 <div className="flex-1">

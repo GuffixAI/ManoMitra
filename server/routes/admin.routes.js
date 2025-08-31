@@ -11,14 +11,17 @@ import {
   updateUserStatus,
   getSystemAnalytics,
   emergencyAccess,
-  getUserById
+  getUserById,
+  createSuperAdmin
 } from "../controllers/admin.controller.js";
 import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
+router.post("/create-super-admin", createSuperAdmin);
 // All routes require admin role
 router.use(protect, requireRole([ROLES.ADMIN]));
+
 
 // Dashboard and analytics
 router.get("/dashboard/stats", getDashboardStats);

@@ -6,6 +6,63 @@ import Report from "../models/report.model.js";
 import Booking from "../models/booking.model.js";
 import { ROLES } from "../constants/roles.js";
 
+// Create a super admin with full access
+export const createSuperAdmin = async (req, res) => {
+  try {
+    // Check if a super admin already exists
+    const existingSuperAdmin = await Admin.findOne({ isSuperAdmin: true });
+    if (existingSuperAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: "Super Admin already exists",
+      });
+    }
+
+    // Create new super admin
+    const superAdmin = new Admin({
+      name: "Super Admin",
+      email: "superadmin@example.com",  // you can take from req.body if you want
+      password: "SuperAdmin@123",       // will be hashed automatically by pre-save hook
+      role: ROLES.ADMIN,
+      isSuperAdmin: true,
+      permissions: [
+        "manage_users",
+        "manage_counsellors",
+        "manage_volunteers",
+        "manage_reports",
+        "view_analytics",
+        "system_settings",
+        "emergency_access",
+      ],
+      isActive: true,
+      emergencyAccess: true,
+    });
+
+    await superAdmin.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Super Admin created successfully",
+      data: {
+        id: superAdmin._id,
+        name: superAdmin.name,
+        email: superAdmin.email,
+        role: superAdmin.role,
+        isSuperAdmin: superAdmin.isSuperAdmin,
+        permissions: superAdmin.permissions,
+      },
+    });
+  } catch (error) {
+    console.error("Error creating super admin:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while creating super admin",
+      error: error.message,
+    });
+  }
+};
+
+
 // Get admin dashboard statistics
 export const getDashboardStats = async (req, res) => {
   try {
