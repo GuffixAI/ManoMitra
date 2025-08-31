@@ -6,6 +6,44 @@ import Report from "../models/report.model.js";
 import Booking from "../models/booking.model.js";
 import { ROLES } from "../constants/roles.js";
 
+// ADDED: Get admin profile controller
+export const getProfile = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select('-password');
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin profile not found" });
+    }
+    res.status(200).json({ success: true, data: admin });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ADDED: Update admin profile controller
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, contactNumber } = req.body;
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (contactNumber) updateData.contactNumber = contactNumber;
+
+    const updatedAdmin = await Admin.findByIdAndUpdate(
+      req.user.id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedAdmin) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Profile updated successfully", data: updatedAdmin });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 // Create a super admin with full access
 export const createSuperAdmin = async (req, res) => {
   try {

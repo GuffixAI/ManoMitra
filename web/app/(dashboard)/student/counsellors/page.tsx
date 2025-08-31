@@ -8,12 +8,15 @@ import { UserPlus } from "lucide-react";
 import { useAvailableCounsellors, useConnectCounsellor } from "@/hooks/api/useStudents";
 
 export default function StudentCounsellorsPage() {
-  const { data, isLoading } = useAvailableCounsellors();
+  const { data: counsellorsResponse, isLoading } = useAvailableCounsellors();
   const connectMutation = useConnectCounsellor();
 
   const handleConnect = (counsellorId: string) => {
     connectMutation.mutate(counsellorId);
   };
+
+  // FIX: Access the nested data array for mapping
+  const counsellors = counsellorsResponse?.data || [];
 
   return (
     <div className="space-y-6">
@@ -23,8 +26,7 @@ export default function StudentCounsellorsPage() {
       {isLoading && <div className="flex justify-center py-8"><Spinner size="lg" /></div>}
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* **BUG FIX:** Changed to data?.data.map to align with standardized API response */}
-        {data?.data.map((counsellor: any) => (
+        {counsellors.map((counsellor: any) => (
           <Card key={counsellor._id}>
             <CardHeader className="flex flex-row items-center gap-4">
               <Avatar className="h-12 w-12">
@@ -33,7 +35,8 @@ export default function StudentCounsellorsPage() {
               </Avatar>
               <div>
                 <CardTitle>{counsellor.name}</CardTitle>
-                <CardDescription>{counsellor.specialization}</CardDescription>
+                {/* FIX: Join array for display */}
+                <CardDescription>{Array.isArray(counsellor.specialization) ? counsellor.specialization.join(', ') : counsellor.specialization}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">

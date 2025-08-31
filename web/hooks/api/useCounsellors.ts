@@ -4,42 +4,41 @@ import { counsellorAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export const useCounsellorDashboard = () => {
-    return useQuery({
-      queryKey: ["counsellorDashboard"],
-      // FIX: The API function already returns the nested data object. No need for .then() here.
-      queryFn: () => counsellorAPI.getDashboard(),
-    });
+  return useQuery({
+    queryKey: ["counsellorDashboard"],
+    // FIX: Removed redundant .then(), api function now returns the data directly
+    queryFn: () => counsellorAPI.getDashboard(),
+  });
 };
 
 export const useMyStudents = (params?: any) => {
-    return useQuery({
-        queryKey: ["myStudents", params],
-        // FIX: The API function already returns the nested data object.
-        queryFn: () => counsellorAPI.getMyStudents(params)
-    });
+  return useQuery({
+      queryKey: ["myStudents", params],
+      // FIX: Removed redundant .then()
+      queryFn: () => counsellorAPI.getMyStudents(params)
+  });
 };
 
 export const useCounsellorSchedule = () => {
-    return useQuery({
-        queryKey: ["counsellorSchedule"],
-        // FIX: The API function already returns the nested data object.
-        queryFn: () => counsellorAPI.getSchedule()
-    });
+  return useQuery({
+      queryKey: ["counsellorSchedule"],
+      // FIX: Removed redundant .then()
+      queryFn: () => counsellorAPI.getSchedule()
+  });
 };
 
 export const useMyAssignedReports = (params?: any) => {
-    return useQuery({
-        queryKey: ["myAssignedReports", params],
-        // This one was correct, but keeping for consistency.
-        queryFn: () => counsellorAPI.getMyReports(params)
-    });
+  return useQuery({
+      queryKey: ["myAssignedReports", params],
+      queryFn: () => counsellorAPI.getMyReports(params)
+  });
 };
 
 export const useCounsellorPerformance = () => {
-    return useQuery({
-        queryKey: ["counsellorPerformance"],
-        queryFn: () => counsellorAPI.getPerformanceMetrics()
-    });
+  return useQuery({
+      queryKey: ["counsellorPerformance"],
+      queryFn: () => counsellorAPI.getPerformanceMetrics()
+  });
 };
 
 export const useUpdateAvailability = () => {

@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAPI } from "@/lib/api"; // Updated import to use the corrected adminAPI
+import { adminAPI } from "@/lib/api"; // FIX: Use the updated adminAPI
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,23 +12,24 @@ import { Spinner } from "@/components/ui/spinner";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
+import { Admin } from "@/types/auth";
 
 export default function AdminProfilePage() {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
 
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+  const { data: profile, isLoading: isLoadingProfile } = useQuery<Admin>({
     queryKey: ["adminProfile", user?._id],
-    queryFn: () => adminAPI.getProfile(), // This will now work correctly
+    queryFn: () => adminAPI.getProfile(), // FIX: This now points to the correct function
     enabled: !!user,
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: (profileData: any) => adminAPI.updateProfile(profileData), // This will also work
+    mutationFn: (profileData: Partial<Admin>) => adminAPI.updateProfile(profileData), // FIX: This now points to the correct function
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["adminProfile", user?._id] });
       // Also update the user in the auth store
-      useAuthStore.getState().setUser({ ...user, ...data } as any);
+      useAuthStore.getState().setUser({ ...user, ...data.data } as any);
       toast.success("Profile updated successfully!");
     },
     onError: (err: any) => {
