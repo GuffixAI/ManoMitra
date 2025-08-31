@@ -16,7 +16,7 @@ export const getProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: counsellor
+      data: counsellor // UPDATED: Ensure consistent data wrapping
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -57,26 +57,28 @@ export const getMyStudents = async (req, res) => {
   try {
     const { page = 1, limit = 10, search } = req.query;
     
-    const counsellor = await Counsellor.findById(req.user.id).populate({
-      path: 'students',
-      select: 'name email studentCode department academicYear lastActive',
-      match: search ? { name: { $regex: search, $options: 'i' } } : {},
-      options: {
-        limit: limit * 1,
-        skip: (page - 1) * limit,
-        sort: { name: 1 }
-      }
-    });
-
+    // UPDATED: Correct population logic to get total count accurately
+    const counsellor = await Counsellor.findById(req.user.id);
     if (!counsellor) {
       return res.status(404).json({ success: false, message: "Counsellor not found" });
     }
 
-    const total = counsellor.students.length;
+    const studentQuery = { _id: { $in: counsellor.students } };
+    if (search) {
+      studentQuery.name = { $regex: search, $options: 'i' };
+    }
+
+    const students = await Student.find(studentQuery)
+      .select('name email studentCode department academicYear lastActive')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ name: 1 });
+
+    const total = await Student.countDocuments(studentQuery);
 
     res.status(200).json({
       success: true,
-      data: counsellor.students,
+      data: students,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / limit),

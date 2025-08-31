@@ -1,4 +1,3 @@
-// Comprehensive student dashboard with all features
 "use client";
 import { useAuthStore } from "@/store/auth.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +26,7 @@ export default function StudentDashboardPage() {
   // Fetch dashboard data
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['student-dashboard'],
-    queryFn: () => studentAPI.getDashboard(),
+    queryFn: () => studentAPI.getDashboard(), // This now returns the correct data shape
     enabled: !!user
   });
 
@@ -78,16 +77,17 @@ export default function StudentDashboardPage() {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
+        {/* FIX: Added optional chaining for safety */}
         <StatCard 
             title="Upcoming Bookings" 
-            value={dashboardData.bookings.pending} 
+            value={dashboardData?.bookings?.pending ?? 0}
             icon={Calendar} 
             link="/student/bookings" 
             linkText="View Bookings"
         />
         <StatCard 
             title="Active Reports" 
-            value={dashboardData.reports.pending} 
+            value={dashboardData?.reports?.pending ?? 0}
             icon={FileText} 
             link="/student/reports" 
             linkText="View Reports"
@@ -95,7 +95,7 @@ export default function StudentDashboardPage() {
         />
         <StatCard 
             title="Total Connections" 
-            value={dashboardData.connections} 
+            value={dashboardData?.connections ?? 0}
             icon={Users} 
             link="/student/counsellors"
             linkText="Manage Connections" 
@@ -131,7 +131,7 @@ export default function StudentDashboardPage() {
                   Create a New Confidential Report
                 </Button>
               </Link>
-              <Link href="/chat">
+              <Link href="/chat/general">
                 <Button variant="outline" className="w-full justify-start">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Join a Peer Support Room

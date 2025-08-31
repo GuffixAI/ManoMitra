@@ -6,28 +6,28 @@ import { toast } from "sonner";
 export const useCounsellorDashboard = () => {
     return useQuery({
       queryKey: ["counsellorDashboard"],
-      queryFn: () => counsellorAPI.getDashboard(),
+      queryFn: () => counsellorAPI.getDashboard().then(res => res.data), // FIX: Unwrap data
     });
 };
 
 export const useMyStudents = (params?: any) => {
     return useQuery({
         queryKey: ["myStudents", params],
-        queryFn: () => counsellorAPI.getMyStudents(params)
+        queryFn: () => counsellorAPI.getMyStudents(params).then(res => res.data) // FIX: Unwrap data
     });
 };
 
 export const useCounsellorSchedule = () => {
     return useQuery({
         queryKey: ["counsellorSchedule"],
-        queryFn: () => counsellorAPI.getSchedule()
+        queryFn: () => counsellorAPI.getSchedule().then(res => res.data) // FIX: Unwrap data
     });
 };
 
 export const useMyAssignedReports = (params?: any) => {
     return useQuery({
         queryKey: ["myAssignedReports", params],
-        queryFn: () => counsellorAPI.getMyReports(params)
+        queryFn: () => counsellorAPI.getMyReports(params) // This one already returns the correct structure
     });
 };
 

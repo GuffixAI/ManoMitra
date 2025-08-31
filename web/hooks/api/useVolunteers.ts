@@ -4,12 +4,11 @@ import { api } from "@/lib/axios";
 import { volunteerAPI } from "@/lib/api";
 import { toast } from "sonner";
 
-
 // For the logged-in volunteer to get their own rating (Corrected endpoint)
 export const useMyVolunteerRating = () => {
     return useQuery({
         queryKey: ['myVolunteerRating'],
-        queryFn: () => volunteerAPI.getDashboard().then(data => ({ rating: data.rating, feedbackCount: data.feedbackCount })),
+        queryFn: () => volunteerAPI.getDashboard().then(res => ({ rating: res.data.rating, feedbackCount: res.data.feedbackCount })), // FIX: unwrap data
     });
 };
 
@@ -25,7 +24,7 @@ export const useAllVolunteers = () => {
 export const useVolunteerDashboard = () => {
     return useQuery({
         queryKey: ["volunteerDashboard"],
-        queryFn: () => volunteerAPI.getDashboard(),
+        queryFn: () => volunteerAPI.getDashboard().then(res => res.data), // FIX: unwrap data
     });
 };
 
@@ -41,7 +40,7 @@ export const useVolunteerPerformance = () => {
 export const useModeratedRooms = () => {
     return useQuery({
         queryKey: ["moderatedRooms"],
-        queryFn: () => volunteerAPI.getModeratedRooms()
+        queryFn: () => volunteerAPI.getModeratedRooms().then(res => res.data), // FIX: unwrap data
     });
 };
 
@@ -49,7 +48,7 @@ export const useModeratedRooms = () => {
 export const useMyVolunteerFeedback = () => {
     return useQuery({
         queryKey: ["myVolunteerFeedback"],
-        queryFn: () => volunteerAPI.getMyFeedback()
+        queryFn: () => volunteerAPI.getMyFeedback().then(res => res.data), // FIX: unwrap data
     });
 };
 

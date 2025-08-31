@@ -6,13 +6,13 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Home, 
-  Calendar, 
-  MessageSquare, 
-  FileText, 
-  Users, 
-  Bell, 
+import {
+  Home,
+  Calendar,
+  MessageSquare,
+  FileText,
+  Users,
+  Bell,
   Settings,
   LogOut,
   Menu,
@@ -89,7 +89,7 @@ export function Sidebar({ className }: SidebarProps) {
           },
           {
             title: "Peer Support",
-            href: "/chat",
+            href: "/chat/general", // UPDATED: Link to a default chat room
             icon: MessageSquare,
             badge: null
           },
@@ -210,10 +210,17 @@ export function Sidebar({ className }: SidebarProps) {
             icon: Settings,
             badge: null
           },
+          // ADDED: Admin Profile and Notifications link
           {
             title: "Notifications",
             href: "/admin/notifications",
             icon: Bell,
+            badge: null
+          },
+          {
+            title: "Profile",
+            href: "/admin/profile",
+            icon: User,
             badge: null
           }
         ];
@@ -227,7 +234,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   const SidebarContent = () => (
     <div className={cn(
-      "flex h-full flex-col bg-card border-r",
+      "flex h-full flex-col bg-card border-r transition-all duration-300 ease-in-out",
       isCollapsed ? "w-16" : "w-64",
       className
     )}>
@@ -247,13 +254,13 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-2 p-4">
+      <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
         {navigationItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
 
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => isMobileOpen && setIsMobileOpen(false)}>
               <Button
                 variant={isActive ? "default" : "ghost"}
                 className={cn(
@@ -282,9 +289,9 @@ export function Sidebar({ className }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t p-4 space-y-2">
+      <div className="border-t p-4 space-y-2 mt-auto">
         {/* Help */}
-        <Link href="/help">
+        <Link href="/help" onClick={() => isMobileOpen && setIsMobileOpen(false)}>
           <Button
             variant="ghost"
             className={cn(
@@ -332,7 +339,7 @@ export function Sidebar({ className }: SidebarProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="fixed top-4 left-4 z-50 md:hidden"
+          className="fixed top-3 left-3 z-50 md:hidden bg-background/50 backdrop-blur-sm"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
         >
           {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}

@@ -1,3 +1,4 @@
+
 // components/forms/CreateBookingForm.tsx
 "use client";
 import { useForm, Controller } from "react-hook-form";
@@ -21,7 +22,9 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
     const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm();
     const createBookingMutation = useCreateBooking();
     
-    const { data: counsellors, isLoading: isLoadingCounsellors } = useAvailableCounsellors();
+    // FIX: Correctly access nested data array from the API response
+    const { data: counsellorsResponse, isLoading: isLoadingCounsellors } = useAvailableCounsellors();
+    const counsellors = counsellorsResponse?.data || [];
 
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const selectedCounsellorId = watch("counsellorId");
@@ -75,8 +78,7 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingCounsellors}>
                             <SelectTrigger><SelectValue placeholder={isLoadingCounsellors ? "Loading..." : "Select a counsellor"} /></SelectTrigger>
                             <SelectContent>
-                                {/* **BUG FIX:** Access the nested .data array */}
-                                {counsellors?.data?.map((c: any) => <SelectItem key={c._id} value={c._id}>{c.name} - {c.specialization}</SelectItem>)}
+                                {counsellors.map((c: any) => <SelectItem key={c._id} value={c._id}>{c.name} - {c.specialization}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     )}
@@ -95,7 +97,7 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                            <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus disabled={(date) => date < new Date() || date > dayjs().add(1, 'month').toDate()} />
+                            <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || date > dayjs().add(1, 'month').toDate()} />
                         </PopoverContent>
                     </Popover>
                 </div>

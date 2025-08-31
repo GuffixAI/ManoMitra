@@ -1,5 +1,4 @@
 // web/components/notifications/NotificationCenter.tsx
-
 "use client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationAPI } from "@/lib/api";
@@ -20,13 +19,14 @@ export function NotificationCenter() {
     queryFn: () => notificationAPI.getUserNotifications({ limit: 50 }),
   });
 
-  // Correctly access the nested notifications array
+  // FIX: Correctly access the nested notifications array
   const notifications = data?.data?.notifications || [];
 
   const markAllReadMutation = useMutation({
     mutationFn: () => notificationAPI.markAllAsRead(),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] }); // Invalidate count query too
         toast.success("All notifications marked as read.");
     },
     onError: () => toast.error("Failed to mark all as read.")
@@ -36,20 +36,18 @@ export function NotificationCenter() {
     <div className="space-y-6">
         <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">Notifications</h1>
-            <Button 
-                variant="outline" 
+            <Button
+                variant="outline"
                 onClick={() => markAllReadMutation.mutate()}
-                // FIX: Access notifications from the `notifications` constant
                 disabled={markAllReadMutation.isPending || !notifications.some((n:any) => !n.isRead)}
             >
-                <CheckCheck className="mr-2 h-4 w-4" /> Mark all as read
+                {markAllReadMutation.isPending ? "Marking..." : <><CheckCheck className="mr-2 h-4 w-4" /> Mark all as read</>}
             </Button>
         </div>
         <Card>
             <CardContent className="pt-6">
                 {isLoading && <div className="flex justify-center py-8"><Spinner size="lg" /></div>}
 
-                {/* FIX: Check the length of the `notifications` constant */}
                 {!isLoading && notifications.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
                         <BellOff className="mx-auto h-12 w-12 mb-4" />
@@ -58,12 +56,11 @@ export function NotificationCenter() {
                     </div>
                 )}
 
-                {/* FIX: Map over the `notifications` constant */}
                 {!isLoading && notifications.length > 0 && (
                     <div className="space-y-4">
                         {notifications.map((notif: any) => (
-                            <div key={notif._id} className={`flex items-start gap-4 p-4 rounded-lg border ${!notif.isRead ? 'bg-muted/50' : ''}`}>
-                                <div className={`mt-1 h-2 w-2 rounded-full ${!notif.isRead ? 'bg-primary' : 'bg-transparent'}`} />
+                            <div key={notif._id} className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${!notif.isRead ? 'bg-muted/50' : ''}`}>
+                                <div className={`mt-1.5 h-2 w-2 rounded-full flex-shrink-0 ${!notif.isRead ? 'bg-primary' : 'bg-transparent'}`} />
                                 <div className="flex-1">
                                     <p className="font-semibold">{notif.title}</p>
                                     <p className="text-sm text-muted-foreground">{notif.message}</p>

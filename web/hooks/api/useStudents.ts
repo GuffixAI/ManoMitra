@@ -1,5 +1,5 @@
-// FILE: web/hooks/api/useStudents.ts
 
+// FILE: web/hooks/api/useStudents.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 export const useStudentProfile = () => {
   return useQuery({
     queryKey: ["studentProfile"],
-    queryFn: () => studentAPI.getProfile(),
+    queryFn: () => studentAPI.getProfile().then(res => res.data), // FIX: Unwrap data
   });
 };
 
@@ -31,6 +31,7 @@ export const useUpdateStudentProfile = () => {
 export const useAvailableCounsellors = (params?: any) => {
     return useQuery({
         queryKey: ['availableCounsellors', params],
+        // FIX: Return the full response so pagination can be used later
         queryFn: () => studentAPI.getAvailableCounsellors(params),
     });
 };
@@ -39,6 +40,7 @@ export const useAvailableCounsellors = (params?: any) => {
 export const useAvailableVolunteers = (params?: any) => {
     return useQuery({
         queryKey: ['availableVolunteers', params],
+        // FIX: Return the full response
         queryFn: () => studentAPI.getAvailableVolunteers(params),
     });
 };
