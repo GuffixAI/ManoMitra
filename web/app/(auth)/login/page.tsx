@@ -1,4 +1,4 @@
-// Enhanced login page with role selection and proper API integration
+// web/app/(auth)/login/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -25,6 +25,7 @@ type LoginForm = {
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
+  const [isRedirecting, setIsRedirecting] = useState(false); // New state for smooth transition
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
   const { loginUser, isLoading, error, clearError } = useAuthStore();
@@ -45,11 +46,12 @@ export default function LoginPage() {
     });
 
     if (success) {
-      toast.success("Login successful!");
-      
+      toast.success("Login successful! Redirecting...");
+      setIsRedirecting(true); // Set redirecting state
+
       // Redirect based on role
       const roleToDashboard: Record<string, string> = {
-        [ROLES.STUDENT]: '/student',
+        [ROLES.STUDENT]: '/pre-dashboard',
         [ROLES.COUNSELLOR]: '/counsellor',
         [ROLES.VOLUNTEER]: '/volunteer',
         [ROLES.ADMIN]: '/admin',
@@ -81,7 +83,6 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(handleLogin)} className="space-y-4">
-              {/* Role Selection */}
               <div className="space-y-2">
                 <Label htmlFor="role">I am a...</Label>
                 <Select value={selectedRole} onValueChange={setSelectedRole}>
@@ -97,7 +98,6 @@ export default function LoginPage() {
                 </Select>
               </div>
 
-              {/* Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -118,7 +118,6 @@ export default function LoginPage() {
                 )}
               </div>
 
-              {/* Password Field */}
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -128,10 +127,7 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     {...register("password", { 
                       required: "Password is required",
-                      minLength: {
-                        value: 8,
-                        message: "Password must be at least 8 characters"
-                      }
+                      minLength: { value: 8, message: "Password must be at least 8 characters" }
                     })}
                     className={errors.password ? "border-destructive pr-10" : "pr-10"}
                   />
@@ -148,30 +144,26 @@ export default function LoginPage() {
                 )}
               </div>
 
-              {/* Error Display */}
               {error && (
                 <div className="rounded-md bg-destructive/10 p-3">
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
 
-              {/* Submit Button */}
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading || !selectedRole}
+                disabled={isLoading || !selectedRole || isRedirecting}
               >
                 {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</>
+                ) : isRedirecting ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Redirecting...</>
                 ) : (
                   "Sign In"
                 )}
               </Button>
 
-              {/* Links */}
               <div className="text-center space-y-2">
                 <p className="text-sm text-muted-foreground">
                   Don't have an account?{" "}
