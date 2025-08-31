@@ -2,6 +2,7 @@
 
 import Booking from "../models/booking.model.js";
 import Counsellor from "../models/counsellor.model.js";
+import Notification from "../models/notification.model.js";
 import dayjs from "dayjs";
 import { asyncHandler } from "../middlewares/error.middleware.js";
 
@@ -41,6 +42,18 @@ export const createBooking = asyncHandler(async (req, res) => {
     mode,
     notes,
   });
+  
+  // Notify counsellor
+  await Notification.create({
+      recipient: counsellorId,
+      recipientModel: 'Counsellor',
+      sender: req.user.id,
+      senderModel: 'Student',
+      type: 'booking_request',
+      title: 'New Booking Request',
+      message: `You have a new booking request from a student for ${startD.format('MMM D, h:mm A')}.`,
+      data: { bookingId: booking._id, studentId: req.user.id }
+  });
 
   res.status(201).json({ success: true, message: "Booking request created successfully", data: booking });
 });
@@ -76,6 +89,17 @@ export const cancelBooking = asyncHandler(async (req, res) => {
   }
   booking.status = "cancelled";
   await booking.save();
+
+  // Notify counsellor of cancellation
+  await Notification.create({
+      recipient: booking.counsellor,
+      recipientModel: 'Counsellor',
+      type: 'booking_cancelled',
+      title: 'Booking Cancelled',
+      message: `A student has cancelled the booking for ${dayjs(booking.start).format('MMM D, h:mm A')}.`,
+      data: { bookingId: booking._id, studentId: booking.student }
+  });
+
   res.status(200).json({ success: true, message: "Booking cancelled successfully", data: booking });
 });
 
@@ -102,6 +126,17 @@ export const confirmBooking = asyncHandler(async (req, res) => {
     }
     booking.status = "approved";
     await booking.save();
+
+    // Notify student of confirmation
+    await Notification.create({
+        recipient: booking.student,
+        recipientModel: 'Student',
+        type: 'booking_confirmed',
+        title: 'Booking Confirmed',
+        message: `Your booking with a counsellor for ${dayjs(booking.start).format('MMM D, h:mm A')} has been confirmed.`,
+        data: { bookingId: booking._id, counsellorId: req.user.id }
+    });
+
     res.status(200).json({ success: true, message: "Booking confirmed", data: booking });
 });
 
@@ -116,6 +151,17 @@ export const rejectBooking = asyncHandler(async (req, res) => {
     }
     booking.status = "rejected";
     await booking.save();
+
+    // Notify student of rejection
+    await Notification.create({
+        recipient: booking.student,
+        recipientModel: 'Student',
+        type: 'booking_rejected',
+        title: 'Booking Rejected',
+        message: `Your booking request for ${dayjs(booking.start).format('MMM D, h:mm A')} has been rejected.`,
+        data: { bookingId: booking._id, counsellorId: req.user.id }
+    });
+
     res.status(200).json({ success: true, message: "Booking rejected", data: booking });
 });
 
@@ -169,7 +215,7 @@ export const getAvailableSlots = asyncHandler(async (req, res) => {
   const dayOfWeek = startOfDay.format('dddd').toLowerCase();
   const dayAvailability = counsellor.availableTime.find(d => d.day === dayOfWeek);
 
-  if (!dayAvailability) {
+  if (!dayAvailability || !dayAvailability.slots) {
     return res.status(200).json({ success: true, data: [] }); // No slots for this day
   }
 

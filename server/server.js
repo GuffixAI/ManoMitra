@@ -240,7 +240,7 @@ peer.on("connection", async (socket) => {
       });
 
       // Emit to room with enhanced data
-      peer.to(roomId).emit("message", {
+      const messagePayload = {
         id: msg._id,
         roomId,
         text: msg.content,
@@ -250,7 +250,9 @@ peer.on("connection", async (socket) => {
           role: socket.user.role,
         },
         createdAt: msg.createdAt
-      });
+      };
+      peer.to(roomId).emit("message", messagePayload);
+
     } catch (error) {
       console.error("Message error:", error);
       socket.emit("error", { message: "Failed to send message" });

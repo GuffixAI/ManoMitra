@@ -1,4 +1,4 @@
-// Enhanced authentication store with proper user management
+// FILE: web/store/auth.store.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, LoginRequest, RegisterRequest } from '@/types/auth';
@@ -12,7 +12,7 @@ interface AuthState {
   
   // Actions
   login: (user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -40,17 +40,24 @@ export const useAuthStore = create<AuthState>()(
         isLoading: false 
       }),
 
-      logout: () => {
-        if (typeof document !== 'undefined') {
-          // Clear the token cookie by setting its expiration date to the past
-          document.cookie = `token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      logout: async () => {
+        try {
+          // Call backend logout endpoint (best practice)
+          await authAPI.logout();
+        } catch (error) {
+          console.error("Backend logout failed, proceeding with client-side logout.", error);
+        } finally {
+          // Always perform client-side cleanup
+          if (typeof document !== 'undefined') {
+            document.cookie = `token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+          }
+          set({ 
+            user: null, 
+            isAuthenticated: false, 
+            error: null,
+            isLoading: false 
+          });
         }
-        set({ 
-          user: null, 
-          isAuthenticated: false, 
-          error: null,
-          isLoading: false 
-        });
       },
 
       setUser: (user: User | null) => set({ 
@@ -73,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
           if (response.success && response?.user) {
             if (response.token && typeof document !== 'undefined') {
               const sevenDays = 7 * 24 * 60 * 60;
-              document.cookie = `token=${encodeURIComponent(response.token)}; path=/; max-age=${sevenDays}; SameSite=Lax`;
+              document.cookie = `token=${encodeURIComponent(response.token)}; path=/; max-age=${sevenDays}; SameSite=Lax; Secure`;
             }
             set({ 
               user: response.user, 
@@ -144,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
              set({ isLoading: false });
           }
         } catch (error: any) {
-          get().logout(); // Logout if refresh fails
+          await get().logout(); // Logout if refresh fails
         }
       },
 

@@ -1,3 +1,5 @@
+// FILE: web/types/auth.d.ts
+
 // Enhanced user types matching the backend models
 
 interface BaseUser {
@@ -67,6 +69,7 @@ export interface Counsellor extends BaseUser {
 // Volunteer interface matching backend model
 export interface Volunteer extends BaseUser {
   role: 'volunteer';
+  description?: string; // <-- FIX: Added missing property
   skills: string[];
   interests: string[];
   experience: number;

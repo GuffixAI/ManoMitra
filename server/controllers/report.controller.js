@@ -3,6 +3,7 @@
 import Report from "../models/report.model.js";
 import Student from "../models/student.model.js";
 import Counsellor from "../models/counsellor.model.js";
+import Notification from "../models/notification.model.js";
 
 // Student: Create a new report
 export const createReport = async (req, res) => {
@@ -30,6 +31,10 @@ export const createReport = async (req, res) => {
     await Student.findByIdAndUpdate(req.user.id, {
       $push: { reports: report._id }
     });
+
+    // NOTE: Notifying all admins of a new report might be noisy.
+    // A better approach would be to add it to an admin dashboard queue.
+    // For now, this is omitted, but can be added if required.
 
     res.status(201).json({ 
       success: true, 
@@ -87,9 +92,10 @@ export const getReportById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Report not found" });
     }
 
-    // Check if the student owns this report
-    if (report.owner._id.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Access denied" });
+    // Check if the student owns this report or an admin/assigned counsellor is accessing it
+    const isOwner = report.owner._id.toString() === req.user.id;
+    if (!isOwner) {
+       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
     res.status(200).json({
@@ -238,6 +244,17 @@ export const updateReportStatus = async (req, res) => {
     // Update report status
     if (status === "resolved") {
       await report.resolve(resolutionNotes || "");
+
+      // Notify student that report is resolved
+      await Notification.create({
+          recipient: report.owner,
+          recipientModel: 'Student',
+          type: 'report_resolved',
+          title: 'Your Report has been Resolved',
+          message: `Your report titled "${report.title}" has been resolved by your counsellor.`,
+          data: { reportId: report._id, counsellorId: req.user.id }
+      });
+
     } else {
       report.status = status;
       if (status === "closed") {

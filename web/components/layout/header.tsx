@@ -1,3 +1,4 @@
+// FILE: web/components/layout/header.tsx
 "use client";
 import { useState } from "react";
 import Link from "next/link";
@@ -14,12 +15,14 @@ import {
   ChevronDown,
   Sun,
   Moon,
-  Monitor
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { useQuery } from "@tanstack/react-query";
+import { notificationAPI } from "@/lib/api";
+import dayjs from "dayjs";
 
 interface HeaderProps {
   className?: string;
@@ -30,6 +33,19 @@ export function Header({ className }: HeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
+
+  const { data: unreadCountData } = useQuery({
+    queryKey: ['unreadNotificationsCount'],
+    queryFn: () => notificationAPI.getUnreadCount(),
+    enabled: !!user,
+    refetchInterval: 60000, // Refetch every minute
+  });
+
+  const { data: notificationsData } = useQuery({
+    queryKey: ['latestNotifications'],
+    queryFn: () => notificationAPI.getUserNotifications({ limit: 5 }),
+    enabled: isNotificationsOpen, // Only fetch when the dropdown is open
+  });
 
   const handleLogout = async () => {
     try {
@@ -52,19 +68,22 @@ export function Header({ className }: HeaderProps) {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'student':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
       case 'counsellor':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
       case 'volunteer':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300';
       case 'admin':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
   if (!user) return null;
+
+  const unreadCount = unreadCountData?.unreadCount || 0;
+  const notifications = notificationsData?.notifications || [];
 
   return (
     <header className={cn(
@@ -106,12 +125,14 @@ export function Header({ className }: HeaderProps) {
             className="h-9 w-9 relative"
           >
             <Bell className="h-4 w-4" />
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
-            >
-              3
-            </Badge>
+            {unreadCount > 0 && (
+                <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
+                >
+                {unreadCount}
+                </Badge>
+            )}
           </Button>
 
           {/* Notifications Dropdown */}
@@ -133,49 +154,27 @@ export function Header({ className }: HeaderProps) {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold">Notifications</h3>
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                      Mark all as read
-                    </Button>
                   </div>
                   
                   <div className="space-y-3 max-h-64 overflow-y-auto">
-                    {/* Sample notifications */}
-                    <div className="flex items-start space-x-3 p-2 rounded-md hover:bg-muted">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">New booking request</p>
-                        <p className="text-xs text-muted-foreground">
-                          You have a new session request from John Doe
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">2 hours ago</p>
+                    {notifications.length > 0 ? notifications.map((notif: any) => (
+                       <div key={notif._id} className="flex items-start space-x-3 p-2 rounded-md hover:bg-muted">
+                        {!notif.isRead && <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0"></div>}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{notif.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {notif.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{dayjs(notif.createdAt).fromNow()}</p>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3 p-2 rounded-md hover:bg-muted">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Report assigned</p>
-                        <p className="text-xs text-muted-foreground">
-                          A new report has been assigned to you
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">1 day ago</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3 p-2 rounded-md hover:bg-muted">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">System maintenance</p>
-                        <p className="text-xs text-muted-foreground">
-                          Scheduled maintenance on Sunday at 2 AM
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">3 days ago</p>
-                      </div>
-                    </div>
+                    )) : (
+                        <p className="text-sm text-center text-muted-foreground py-4">No new notifications.</p>
+                    )}
                   </div>
                   
                   <div className="mt-4 pt-3 border-t">
-                    <Link href="/notifications">
+                    <Link href={`/${user.role}/notifications`}>
                       <Button variant="outline" size="sm" className="w-full">
                         View all notifications
                       </Button>
@@ -257,7 +256,7 @@ export function Header({ className }: HeaderProps) {
                       </Button>
                     </Link>
                     
-                    <div className="border-t pt-2">
+                    <div className="border-t pt-2 mt-2">
                       <Button
                         variant="ghost"
                         onClick={handleLogout}

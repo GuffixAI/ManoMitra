@@ -1,3 +1,6 @@
+
+// FILE: server/controllers/volunteer.controller.js
+
 import Volunteer from "../models/volunteer.model.js";
 import Student from "../models/student.model.js";
 import Message from "../models/message.model.js";
@@ -67,12 +70,15 @@ export const updateProfile = async (req, res) => {
 // Get volunteer's dashboard data
 export const getDashboardData = async (req, res) => {
   try {
+    const volunteer = await Volunteer.findById(req.user.id);
+    if (!volunteer) {
+        return res.status(404).json({ success: false, message: "Volunteer not found" });
+    }
+
     const [
       totalMessages,
       todayMessages,
       totalRooms,
-      averageRating,
-      feedbackCount
     ] = await Promise.all([
       Message.countDocuments({ 
         sender: req.user.id, 
@@ -86,8 +92,6 @@ export const getDashboardData = async (req, res) => {
         } 
       }),
       Room.countDocuments({ moderators: req.user.id }),
-      Volunteer.findById(req.user.id).then(v => v?.getAverageRating() || 0),
-      Volunteer.findById(req.user.id).then(v => v?.feedback?.length || 0)
     ]);
 
     res.status(200).json({
@@ -98,8 +102,8 @@ export const getDashboardData = async (req, res) => {
           today: todayMessages
         },
         rooms: totalRooms,
-        rating: parseFloat(averageRating),
-        feedbackCount
+        rating: parseFloat(volunteer.averageRating),
+        feedbackCount: volunteer.feedbackCount,
       }
     });
   } catch (error) {
@@ -128,12 +132,15 @@ export const getPerformanceMetrics = async (req, res) => {
       default:
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     }
+    
+    const volunteer = await Volunteer.findById(req.user.id);
+    if (!volunteer) {
+        return res.status(404).json({ success: false, message: "Volunteer not found" });
+    }
 
     const [
       totalMessages,
       totalRooms,
-      averageRating,
-      feedbackCount
     ] = await Promise.all([
       Message.countDocuments({ 
         sender: req.user.id, 
@@ -143,8 +150,6 @@ export const getPerformanceMetrics = async (req, res) => {
       Room.countDocuments({ 
         moderators: req.user.id 
       }),
-      Volunteer.findById(req.user.id).then(v => v?.getAverageRating() || 0),
-      Volunteer.findById(req.user.id).then(v => v?.feedback?.length || 0)
     ]);
 
     res.status(200).json({
@@ -156,8 +161,8 @@ export const getPerformanceMetrics = async (req, res) => {
         metrics: {
           totalMessages,
           totalRooms,
-          averageRating: parseFloat(averageRating),
-          feedbackCount
+          averageRating: parseFloat(volunteer.averageRating),
+          feedbackCount: volunteer.feedbackCount
         }
       }
     });

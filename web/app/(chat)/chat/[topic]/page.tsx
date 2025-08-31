@@ -1,4 +1,4 @@
-// web/app/(chat)/chat/[topic]/page.tsx
+// FILE: web/app/(chat)/chat/[topic]/page.tsx
 "use client";
 import { useSocket } from '@/hooks/useSocket';
 import { useParams } from 'next/navigation';
@@ -11,11 +11,15 @@ import { Send, UserCircle } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import dayjs from 'dayjs';
 
+interface Sender {
+  id: string;
+  name: string;
+  role: string;
+}
 interface Message {
   id: string;
   text: string;
-  senderId: string;
-  senderModel: string;
+  sender: Sender;
   createdAt: string;
 }
 
@@ -97,7 +101,7 @@ export default function ChatRoomPage() {
       <div className="flex-1 space-y-4 overflow-y-auto pr-4">
         <AnimatePresence>
           {messages.map((msg) => {
-            const isMe = msg.senderId === user?._id;
+            const isMe = msg.sender?.id === user?._id;
             return (
               <motion.div
                 key={msg.id}
@@ -116,7 +120,7 @@ export default function ChatRoomPage() {
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
-                  <p className="text-sm font-bold">{isMe ? 'You' : msg.senderModel}</p>
+                  <p className="text-sm font-bold capitalize">{isMe ? 'You' : msg.sender?.name || msg.sender?.role}</p>
                   <p>{msg.text}</p>
                   <p className={`text-xs mt-1 opacity-70 ${isMe ? 'text-right' : 'text-left'}`}>
                     {dayjs(msg.createdAt).format('h:mm A')}

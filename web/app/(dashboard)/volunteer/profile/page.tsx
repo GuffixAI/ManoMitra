@@ -11,9 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { Spinner } from "@/components/ui/spinner";
 import React from "react";
+import { Volunteer } from "@/types/auth";
 
 export default function VolunteerProfilePage() {
-    const { data: profile, isLoading } = useQuery({
+    const { data: profile, isLoading } = useQuery<Volunteer>({
         queryKey: ["volunteerProfile"],
         queryFn: () => volunteerAPI.getProfile(),
     });
@@ -23,9 +24,11 @@ export default function VolunteerProfilePage() {
     
     React.useEffect(() => {
         if (profile) {
-            Object.keys(profile).forEach(key => {
-                setValue(key, profile[key]);
-            });
+            setValue("name", profile.name);
+            setValue("description", profile.description || ""); // Handle optional property
+            // Convert arrays to comma-separated strings for the input fields
+            setValue("skills", Array.isArray(profile.skills) ? profile.skills.join(", ") : "");
+            setValue("interests", Array.isArray(profile.interests) ? profile.interests.join(", ") : "");
         }
     }, [profile, setValue]);
 
@@ -57,11 +60,11 @@ export default function VolunteerProfilePage() {
                         </div>
                         <div>
                             <Label htmlFor="skills">Skills (comma-separated)</Label>
-                            <Input id="skills" {...register("skills", { setValueAs: v => v.split(',').map((s: string) => s.trim()) })} />
+                            <Input id="skills" {...register("skills", { setValueAs: v => v.split(',').map((s: string) => s.trim()).filter(Boolean) })} />
                         </div>
                         <div>
                             <Label htmlFor="interests">Interests (comma-separated)</Label>
-                            <Input id="interests" {...register("interests", { setValueAs: v => v.split(',').map((s: string) => s.trim()) })} />
+                            <Input id="interests" {...register("interests", { setValueAs: v => v.split(',').map((s: string) => s.trim()).filter(Boolean) })} />
                         </div>
                         <Button type="submit" disabled={updateProfileMutation.isPending}>
                             {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
