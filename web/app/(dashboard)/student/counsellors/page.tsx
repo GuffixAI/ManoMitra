@@ -1,26 +1,18 @@
 // web/app/(dashboard)/student/counsellors/page.tsx
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { studentAPI } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import { Badge } from "@/components/ui/badge";
 import { UserPlus } from "lucide-react";
-import { toast } from "sonner";
+import { useAvailableCounsellors, useConnectCounsellor } from "@/hooks/api/useStudents";
 
 export default function StudentCounsellorsPage() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["availableCounsellors"],
-    queryFn: () => studentAPI.getAvailableCounsellors(),
-  });
+  const { data, isLoading } = useAvailableCounsellors();
+  const connectMutation = useConnectCounsellor();
 
   const handleConnect = (counsellorId: string) => {
-    // In a real app, you would use a mutation hook here
-    studentAPI.connectCounsellor(counsellorId)
-      .then(() => toast.success("Connection request sent!"))
-      .catch((err) => toast.error(err.response?.data?.message || "Failed to connect."));
+    connectMutation.mutate(counsellorId);
   };
 
   return (
@@ -31,6 +23,7 @@ export default function StudentCounsellorsPage() {
       {isLoading && <div className="flex justify-center py-8"><Spinner size="lg" /></div>}
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* **BUG FIX:** Changed to data?.data.map to align with standardized API response */}
         {data?.data.map((counsellor: any) => (
           <Card key={counsellor._id}>
             <CardHeader className="flex flex-row items-center gap-4">
@@ -45,7 +38,11 @@ export default function StudentCounsellorsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground line-clamp-3 h-[60px]">{counsellor.description}</p>
-              <Button className="w-full" onClick={() => handleConnect(counsellor._id)}>
+              <Button 
+                className="w-full" 
+                onClick={() => handleConnect(counsellor._id)}
+                disabled={connectMutation.isPending}
+              >
                 <UserPlus className="mr-2 h-4 w-4" />
                 Connect
               </Button>

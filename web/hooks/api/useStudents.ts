@@ -26,3 +26,34 @@ export const useUpdateStudentProfile = () => {
     },
   });
 };
+
+// Get available counsellors for students
+export const useAvailableCounsellors = (params?: any) => {
+    return useQuery({
+        queryKey: ['availableCounsellors', params],
+        queryFn: () => studentAPI.getAvailableCounsellors(params),
+    });
+};
+
+// Get available volunteers for students
+export const useAvailableVolunteers = (params?: any) => {
+    return useQuery({
+        queryKey: ['availableVolunteers', params],
+        queryFn: () => studentAPI.getAvailableVolunteers(params),
+    });
+};
+
+// Connect with a counsellor
+export const useConnectCounsellor = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (counsellorId: string) => studentAPI.connectCounsellor(counsellorId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['studentConnections'] });
+            toast.success("Successfully connected with counsellor!");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to connect.");
+        }
+    });
+};

@@ -12,26 +12,27 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import dayjs from "dayjs";
 import { useState, useEffect } from "react";
+import { useAvailableCounsellors } from "@/hooks/api/useStudents";
+import { bookingAPI } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { studentAPI, bookingAPI } from "@/lib/api";
+
 
 export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boolean) => void }) {
     const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm();
     const createBookingMutation = useCreateBooking();
     
-    const { data: counsellors, isLoading: isLoadingCounsellors } = useQuery({
-        queryKey: ["availableCounsellors"],
-        queryFn: () => studentAPI.getAvailableCounsellors(),
-    });
+    const { data: counsellors, isLoading: isLoadingCounsellors } = useAvailableCounsellors();
 
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const selectedCounsellorId = watch("counsellorId");
     
-    const { data: availableSlots, isLoading: isLoadingAvailability } = useQuery({
+    const { data: availableSlotsData, isLoading: isLoadingAvailability } = useQuery({
         queryKey: ["counsellorSlots", selectedCounsellorId, selectedDate],
         queryFn: () => bookingAPI.getAvailableSlots(selectedCounsellorId, dayjs(selectedDate).format('YYYY-MM-DD')),
         enabled: !!selectedCounsellorId && !!selectedDate,
     });
+
+    const availableSlots = availableSlotsData?.data || [];
 
     useEffect(() => {
         // Reset time slot when counsellor or date changes
@@ -74,7 +75,8 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingCounsellors}>
                             <SelectTrigger><SelectValue placeholder={isLoadingCounsellors ? "Loading..." : "Select a counsellor"} /></SelectTrigger>
                             <SelectContent>
-                                {counsellors?.map((c: any) => <SelectItem key={c._id} value={c._id}>{c.name} - {c.specialization}</SelectItem>)}
+                                {/* **BUG FIX:** Access the nested .data array */}
+                                {counsellors?.data?.map((c: any) => <SelectItem key={c._id} value={c._id}>{c.name} - {c.specialization}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     )}
@@ -104,7 +106,7 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
                         control={control}
                         rules={{ required: "Please select a time slot" }}
                         render={({ field }) => (
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedDate || !selectedCounsellorId || isLoadingAvailability}>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDate || !selectedCounsellorId || isLoadingAvailability}>
                                 <SelectTrigger>
                                     <SelectValue placeholder={isLoadingAvailability ? "Loading..." : "Select time"} />
                                 </SelectTrigger>

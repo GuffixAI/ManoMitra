@@ -12,7 +12,7 @@ import {
   getPerformanceMetrics,
   addStudent,
   removeStudent,
-  getDashboardData,
+  getDashboard, // **FIX:** Renamed from getDashboardData
   getAvailabilityById
 } from "../controllers/counsellor.controller.js";
 
@@ -41,6 +41,6 @@ router.get("/reports", counsellorOnly, getMyReports);
 
 // Performance and analytics
 router.get("/performance", counsellorOnly, getPerformanceMetrics);
-router.get("/dashboard", counsellorOnly, getDashboardData);
+router.get("/dashboard", counsellorOnly, getDashboard); // **FIX:** Renamed from getDashboardData
 
 export default router;

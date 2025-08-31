@@ -8,7 +8,7 @@ export const protect = async (req, res, next) => {
   try {
     let token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized: No token provided" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -20,7 +20,11 @@ export const protect = async (req, res, next) => {
     else if (decoded.role === "volunteer") user = await Volunteer.findById(decoded.id);
     else if (decoded.role === "admin") user = await Admin.findById(decoded.id);
 
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user) {
+      // **BUG FIX:** Changed 404 to 401. If the token is valid but the user doesn't exist,
+      // it's an authentication issue, not a "not found" issue.
+      return res.status(401).json({ success: false, message: "Unauthorized: User not found" });
+    }
 
     req.userDetails = user;
     next();

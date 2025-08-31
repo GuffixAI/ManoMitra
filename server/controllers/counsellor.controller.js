@@ -354,8 +354,8 @@ export const removeStudent = async (req, res) => {
   }
 };
 
-// Get counsellor's dashboard data
-export const getDashboardData = async (req, res) => {
+// **IMPROVEMENT:** Renamed from getDashboardData for consistency with API wrapper
+export const getDashboard = async (req, res) => {
   try {
     const [
       totalStudents,

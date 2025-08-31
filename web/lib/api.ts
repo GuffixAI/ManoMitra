@@ -66,29 +66,31 @@ export const authAPI = {
 
 // Student API
 export const studentAPI = {
-  getProfile: async (): Promise<Student> => {
+  getProfile: async () => { // Removed explicit return type to match standardized response
     const response = await api.get('/students/profile');
-    return response.data.data;
+    return response.data;
   },
 
-  updateProfile: async (data: Partial<Student>): Promise<Student> => {
+  updateProfile: async (data: Partial<Student>) => {
     const response = await api.put('/students/profile', data);
-    return response.data.data;
+    return response.data;
   },
 
   getDashboard: async () => {
     const response = await api.get('/students/dashboard');
-    return response.data.data;
+    return response.data;
   },
 
+  // **IMPROVEMENT:** Standardized to return the whole data object
   getAvailableCounsellors: async (params?: { limit?: number; offset?: number }) => {
     const response = await api.get('/students/counsellors', { params });
-    return response.data.data;
+    return response.data; 
   },
 
+  // **IMPROVEMENT:** Standardized to return the whole data object
   getAvailableVolunteers: async (params?: { limit?: number; offset?: number }) => {
     const response = await api.get('/students/volunteers', { params });
-    return response.data.data;
+    return response.data;
   },
 
   connectCounsellor: async (counsellorId: string) => {
@@ -113,7 +115,7 @@ export const studentAPI = {
 
   getConnections: async () => {
     const response = await api.get('/students/connections');
-    return response.data.data;
+    return response.data;
   },
 
   updatePreferences: async (preferences: any) => {
@@ -124,24 +126,24 @@ export const studentAPI = {
 
 // Counsellor API
 export const counsellorAPI = {
-  getProfile: async (): Promise<Counsellor> => {
+  getProfile: async () => {
     const response = await api.get('/counsellors/profile');
-    return response.data.data;
+    return response.data;
   },
 
-  updateProfile: async (data: Partial<Counsellor>): Promise<Counsellor> => {
+  updateProfile: async (data: Partial<Counsellor>) => {
     const response = await api.put('/counsellors/profile', data);
-    return response.data.data;
+    return response.data;
   },
 
   getDashboard: async () => {
     const response = await api.get('/counsellors/dashboard');
-    return response.data.data;
+    return response.data;
   },
 
   getMyStudents: async (params?: { limit?: number; offset?: number; search?: string }) => {
     const response = await api.get('/counsellors/students', { params });
-    return response.data.data;
+    return response.data;
   },
 
   addStudent: async (studentId: string) => {
@@ -156,12 +158,12 @@ export const counsellorAPI = {
 
   getSchedule: async () => {
     const response = await api.get('/counsellors/schedule');
-    return response.data.data;
+    return response.data;
   },
   
   getAvailabilityById: async (counsellorId: string) => {
     const response = await api.get(`/counsellors/${counsellorId}/availability`);
-    return response.data.data;
+    return response.data;
   },
 
   updateAvailability: async (availability: any) => {
@@ -176,40 +178,40 @@ export const counsellorAPI = {
 
   getPerformanceMetrics: async () => {
     const response = await api.get('/counsellors/performance');
-    return response.data.data;
+    return response.data;
   }
 };
 
 // Volunteer API
 export const volunteerAPI = {
-  getProfile: async (): Promise<Volunteer> => {
+  getProfile: async () => {
     const response = await api.get('/volunteers/profile');
-    return response.data.data;
+    return response.data;
   },
 
-  updateProfile: async (data: Partial<Volunteer>): Promise<Volunteer> => {
+  updateProfile: async (data: Partial<Volunteer>) => {
     const response = await api.put('/volunteers/profile', data);
-    return response.data.data;
+    return response.data;
   },
 
   getDashboard: async () => {
     const response = await api.get('/volunteers/dashboard');
-    return response.data.data;
+    return response.data;
   },
 
   getPerformanceMetrics: async () => {
     const response = await api.get('/volunteers/performance');
-    return response.data.data;
+    return response.data;
   },
 
   getModeratedRooms: async () => {
     const response = await api.get('/volunteers/rooms');
-    return response.data.data;
+    return response.data;
   },
 
   getMessageHistory: async (params?: { limit?: number; offset?: number; roomId?: string }) => {
     const response = await api.get('/volunteers/messages', { params });
-    return response.data.data;
+    return response.data;
   },
 
   updateLastActive: async () => {
@@ -224,12 +226,12 @@ export const volunteerAPI = {
 
   getMyFeedback: async () => {
     const response = await api.get('/volunteers/feedback');
-    return response.data.data;
+    return response.data;
   },
 
   getAvailabilityStatus: async () => {
     const response = await api.get('/volunteers/availability');
-    return response.data.data;
+    return response.data;
   },
 
   updateAvailabilityStatus: async (status: any) => {
@@ -287,7 +289,7 @@ export const adminAPI = {
 
   getUserById: async (userId: string, userModel: string) => {
     const response = await api.get(`/admin/users/${userModel}/${userId}`);
-    return response.data.data;
+    return response.data;
   },
 
   sendSystemNotification: async (notification: any) => {
@@ -305,12 +307,12 @@ export const bookingAPI = {
 
   getMyBookings: async (params?: { limit?: number; offset?: number; status?: string }) => {
     const response = await api.get('/bookings/student', { params });
-    return response.data.data;
+    return response.data;
   },
 
   getBookingById: async (id: string) => {
     const response = await api.get(`/bookings/student/${id}`);
-    return response.data.data;
+    return response.data;
   },
 
   cancelBooking: async (id: string) => {
@@ -321,7 +323,7 @@ export const bookingAPI = {
   // Counsellor booking management
   getCounsellorBookings: async (params?: { limit?: number; offset?: number; status?: string }) => {
     const response = await api.get('/bookings/counsellor', { params });
-    return response.data.data;
+    return response.data;
   },
 
   confirmBooking: async (id: string) => {
@@ -341,7 +343,7 @@ export const bookingAPI = {
 
   getAvailableSlots: async (counsellorId: string, date?: string) => {
     const response = await api.get(`/bookings/slots/${counsellorId}`, { params: { date } });
-    return response.data.data;
+    return response.data;
   }
 };
 
@@ -349,7 +351,7 @@ export const bookingAPI = {
 export const reportAPI = {
   createReport: async (data: any) => {
     const response = await api.post('/reports', data);
-    return response.data.data;
+    return response.data;
   },
 
   getMyReports: async (params?: { limit?: number; offset?: number; status?: string }) => {
@@ -359,7 +361,7 @@ export const reportAPI = {
 
   getReportById: async (id: string) => {
     const response = await api.get(`/reports/my/${id}`);
-    return response.data.data;
+    return response.data;
   },
 
   updateReport: async (id: string, data: any) => {
@@ -375,12 +377,12 @@ export const reportAPI = {
   // Counsellor report management
   getAssignedReports: async (params?: { limit?: number; offset?: number; status?: string }) => {
     const response = await api.get('/reports/assigned', { params });
-    return response.data.data;
+    return response.data;
   },
 
   getReportDetails: async (id: string) => {
     const response = await api.get(`/reports/assigned/${id}`);
-    return response.data.data;
+    return response.data;
   },
 
   updateReportStatus: async (id: string, status: string, notes?: string) => {
@@ -398,12 +400,12 @@ export const feedbackAPI = {
 
   getFeedback: async (targetType: string, targetId: string) => {
     const response = await api.get(`/feedback/${targetType}/${targetId}`);
-    return response.data.data;
+    return response.data;
   },
 
   getMyFeedback: async () => {
     const response = await api.get('/feedback/my');
-    return response.data.data;
+    return response.data;
   },
 
   updateFeedback: async (id: string, data: any) => {
@@ -418,12 +420,12 @@ export const feedbackAPI = {
 
   getFeedbackStats: async () => {
     const response = await api.get('/feedback/stats');
-    return response.data.data;
+    return response.data;
   },
 
   getTopRated: async (params?: { limit?: number, type?: string }) => {
     const response = await api.get('/feedback/top-rated', { params });
-    return response.data.data;
+    return response.data;
   }
 };
 
@@ -431,27 +433,27 @@ export const feedbackAPI = {
 export const roomAPI = {
   getAllRooms: async () => {
     const response = await api.get('/rooms');
-    return response.data.data;
+    return response.data;
   },
 
   getRoomByTopic: async (topic: string) => {
     const response = await api.get(`/rooms/${topic}`);
-    return response.data.data;
+    return response.data;
   },
 
   getRoomMessages: async (topic: string, params?: { limit?: number; offset?: number }) => {
     const response = await api.get(`/rooms/${topic}/messages`, { params });
-    return response.data.data;
+    return response.data;
   },
 
   getRoomStats: async (topic: string) => {
     const response = await api.get(`/rooms/${topic}/stats`);
-    return response.data.data;
+    return response.data;
   },
 
   getRoomActivity: async (topic: string) => {
     const response = await api.get(`/rooms/${topic}/activity`);
-    return response.data.data;
+    return response.data;
   },
 
   // Admin only
@@ -482,12 +484,12 @@ export const notificationAPI = {
     includeExpired?: boolean;
   }) => {
     const response = await api.get('/notifications', { params });
-    return response.data.data;
+    return response.data;
   },
 
   getUnreadCount: async (category?: string) => {
     const response = await api.get('/notifications/unread', { params: { category } });
-    return response.data.data;
+    return response.data;
   },
 
   markAsRead: async (id: string) => {
@@ -517,7 +519,7 @@ export const notificationAPI = {
 
   getPreferences: async () => {
     const response = await api.get('/notifications/preferences');
-    return response.data.data;
+    return response.data;
   },
 
   updatePreferences: async (preferences: any) => {
