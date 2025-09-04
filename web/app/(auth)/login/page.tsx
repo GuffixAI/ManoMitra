@@ -57,13 +57,17 @@ const handleLogin = async (data: LoginForm) => {
         [ROLES.ADMIN]: '/admin',
       };
       const dashboardUrl = roleToDashboard[selectedRole];
-      
-      if (dashboardUrl) {
-        // Introduce a delay before redirecting
-        setTimeout(() => {
-          router.push(dashboardUrl);
-        }, 1000); // 1000ms = 1 second delay
+
+      if (dashboardUrl){
+        router.push(dashboardUrl)
       }
+      
+      // if (dashboardUrl) {
+      //   // Introduce a delay before redirecting
+      //   setTimeout(() => {
+      //     router.push(dashboardUrl);
+      //   }, 1000); // 1000ms = 1 second delay
+      // }
     }
   };
 

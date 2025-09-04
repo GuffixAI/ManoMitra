@@ -29,3 +29,18 @@ export const useSystemAnalytics = (params?: any) => {
       queryFn: () => adminAPI.getSystemAnalytics(params),
     });
   };
+
+
+  export const useAllCounsellors = (params?: any) => {
+  return useQuery({
+    queryKey: ["allCounsellors", params],
+    queryFn: () => adminAPI.getAllCounsellors(params),
+  });
+};
+
+export const useAllVolunteers = (params?: any) => {
+  return useQuery({
+    queryKey: ["allVolunteers", params],
+    queryFn: () => adminAPI.getAllVolunteers(params),
+  });
+};

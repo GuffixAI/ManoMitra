@@ -59,3 +59,17 @@ export const useConnectCounsellor = () => {
         }
     });
 };
+
+export const useDisconnectCounsellor = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (counsellorId: string) => studentAPI.disconnectCounsellor(counsellorId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['studentConnections'] });
+            toast.success("Successfully disconnected.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to disconnect.");
+        }
+    });
+};
