@@ -1,3 +1,5 @@
+// models/counsellor.model.js
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { ROLES } from "../constants/roles.js";
@@ -14,14 +16,14 @@ const counsellorSchema = new mongoose.Schema(
     experience: { type: Number, min: 0, default: 0 },
     availableTime: [
       {
-        day: { 
-          type: String, 
+        day: {
+          type: String,
           enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
           required: true
         },
-        slots: [{ 
-          start: { type: String, required: true }, 
-          end: { type: String, required: true } 
+        slots: [{
+          start: { type: String, required: true },
+          end: { type: String, required: true }
         }],
       },
     ],
@@ -41,7 +43,7 @@ const counsellorSchema = new mongoose.Schema(
     contactNumber: String,
     emergencyContact: String
   },
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
@@ -55,23 +57,26 @@ counsellorSchema.index({ rating: -1 });
 
 // Virtual for average rating
 counsellorSchema.virtual('averageRating').get(function () {
-  if (this.feedback.length === 0) return 0;
+  if (!this.feedback || this.feedback.length === 0) return 0; // Defensive check
   const total = this.feedback.reduce((sum, f) => sum + f.rating, 0);
   return (total / this.feedback.length).toFixed(1);
 });
 
 // Virtual for total feedback count
 counsellorSchema.virtual('feedbackCount').get(function () {
+  if (!this.feedback) return 0; // Defensive check
   return this.feedback.length;
 });
 
 // Virtual for available slots count
 counsellorSchema.virtual('availableSlotsCount').get(function () {
-  return this.availableTime.reduce((total, day) => total + day.slots.length, 0);
+  if (!this.availableTime) return 0; // Defensive check
+  return this.availableTime.reduce((total, day) => total + (day.slots ? day.slots.length : 0), 0);
 });
 
 // Virtual for current student count
 counsellorSchema.virtual('currentStudentCount').get(function () {
+  if (!this.students) return 0; // Defensive check
   return this.students.length;
 });
 
@@ -82,7 +87,7 @@ counsellorSchema.virtual('isAvailable').get(function () {
 
 // Hide feedback details from counsellor
 counsellorSchema.methods.getAverageRating = function () {
-  if (this.feedback.length === 0) return 0;
+  if (!this.feedback || this.feedback.length === 0) return 0;
   const total = this.feedback.reduce((sum, f) => sum + f.rating, 0);
   return (total / this.feedback.length).toFixed(1);
 };
@@ -106,7 +111,7 @@ counsellorSchema.methods.removeStudent = function(studentId) {
 counsellorSchema.methods.isAvailableAt = function(day, time) {
   const daySchedule = this.availableTime.find(d => d.day === day);
   if (!daySchedule) return false;
-  
+
   return daySchedule.slots.some(slot => {
     return time >= slot.start && time <= slot.end;
   });
@@ -122,7 +127,7 @@ counsellorSchema.methods.getAvailableSlots = function(day) {
 counsellorSchema.methods.addFeedback = function(studentId, rating, comment = '') {
   // Remove existing feedback from same student
   this.feedback = this.feedback.filter(f => f.student.toString() !== studentId.toString());
-  
+
   // Add new feedback
   this.feedback.push({
     student: studentId,
@@ -130,7 +135,7 @@ counsellorSchema.methods.addFeedback = function(studentId, rating, comment = '')
     comment,
     createdAt: new Date()
   });
-  
+
   return this.save();
 };
 

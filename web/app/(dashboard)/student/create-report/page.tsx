@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 type ReportFormValues = {
   title: string;
   content: string;
-  category: 'academic' | 'personal' | 'health' | 'financial' | 'social' | 'other';
+  category: 'academic' | 'personal' | 'health' | 'financial'|'bullying' | 'social'|'relationship' |'mental'| 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
 };
 
@@ -128,10 +128,10 @@ export default function StudentCreateReportPage() {
             </div>
 
             <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={() => router.back()}>
+              <Button type="button" variant="outline" onClick={() => router.back()} className="cursor-pointer">
                 Cancel
               </Button>
-              <Button type="submit" disabled={createReportMutation.isPending}>
+              <Button type="submit" disabled={createReportMutation.isPending} className="cursor-pointer">
                 {createReportMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Report
               </Button>

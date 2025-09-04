@@ -31,7 +31,7 @@ export default function LoginPage() {
   const { loginUser, isLoading, error, clearError } = useAuthStore();
   const router = useRouter();
 
-  const handleLogin = async (data: LoginForm) => {
+const handleLogin = async (data: LoginForm) => {
     if (!selectedRole) {
       toast.error("Please select your role");
       return;
@@ -59,7 +59,10 @@ export default function LoginPage() {
       const dashboardUrl = roleToDashboard[selectedRole];
       
       if (dashboardUrl) {
-        router.push(dashboardUrl);
+        // Introduce a delay before redirecting
+        setTimeout(() => {
+          router.push(dashboardUrl);
+        }, 1000); // 1000ms = 1 second delay
       }
     }
   };

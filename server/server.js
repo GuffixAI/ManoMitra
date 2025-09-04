@@ -185,6 +185,9 @@ peer.use((socket, next) => {
 peer.on("connection", async (socket) => {
   console.log(`User ${socket.user.id} (${socket.user.role}) connected to peer support`);
 
+  // Store room ID for disconnect logic
+  let currentRoomId = null;
+
   // Join room
   socket.on("join", async ({ topic }) => {
     try {
@@ -192,21 +195,31 @@ peer.on("connection", async (socket) => {
         return socket.emit("error", { message: "Invalid topic" });
       }
 
-      let room = await Room.findOne({ topic });
-      if (!room) {
-        room = await Room.create({ topic, description: `Support room for ${topic}` });
+      // **FIX: Use atomic operation to prevent race conditions**
+      const room = await Room.findOneAndUpdate(
+        { topic },
+        { $setOnInsert: { topic, description: `Support room for ${topic}` } },
+        { upsert: true, new: true }
+      );
+
+      // Leave previous room if any
+      if (currentRoomId) {
+        socket.leave(currentRoomId);
+        socket.to(currentRoomId).emit("userLeft", { userId: socket.user.id, name: socket.user.name });
       }
 
-      socket.join(room._id.toString());
-      socket.emit("joined", { roomId: room._id, topic });
+      currentRoomId = room._id.toString();
+      socket.join(currentRoomId);
+      socket.emit("joined", { roomId: currentRoomId, topic });
 
       // Notify others in room
-      socket.to(room._id.toString()).emit("userJoined", {
+      socket.to(currentRoomId).emit("userJoined", {
         userId: socket.user.id,
         role: socket.user.role,
         name: socket.user.name,
       });
     } catch (error) {
+      console.error("Join room error:", error);
       socket.emit("error", { message: "Failed to join room" });
     }
   });
@@ -306,6 +319,13 @@ peer.on("connection", async (socket) => {
   // Disconnect handling
   socket.on("disconnect", () => {
     console.log(`User ${socket.user.id} disconnected from peer support`);
+    // **FIX: Notify room that user has left**
+    if (currentRoomId) {
+      socket.to(currentRoomId).emit("userLeft", {
+        userId: socket.user.id,
+        name: socket.user.name
+      });
+    }
   });
 });
 

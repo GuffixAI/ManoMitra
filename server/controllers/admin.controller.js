@@ -44,61 +44,11 @@ export const updateProfile = async (req, res) => {
 };
 
 
-// Create a super admin with full access
-export const createSuperAdmin = async (req, res) => {
-  try {
-    // Check if a super admin already exists
-    const existingSuperAdmin = await Admin.findOne({ isSuperAdmin: true });
-    if (existingSuperAdmin) {
-      return res.status(400).json({
-        success: false,
-        message: "Super Admin already exists",
-      });
-    }
-
-    // Create new super admin
-    const superAdmin = new Admin({
-      name: "Super Admin",
-      email: "superadmin@example.com",  // you can take from req.body if you want
-      password: "SuperAdmin@123",       // will be hashed automatically by pre-save hook
-      role: ROLES.ADMIN,
-      isSuperAdmin: true,
-      permissions: [
-        "manage_users",
-        "manage_counsellors",
-        "manage_volunteers",
-        "manage_reports",
-        "view_analytics",
-        "system_settings",
-        "emergency_access",
-      ],
-      isActive: true,
-      emergencyAccess: true,
-    });
-
-    await superAdmin.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Super Admin created successfully",
-      data: {
-        id: superAdmin._id,
-        name: superAdmin.name,
-        email: superAdmin.email,
-        role: superAdmin.role,
-        isSuperAdmin: superAdmin.isSuperAdmin,
-        permissions: superAdmin.permissions,
-      },
-    });
-  } catch (error) {
-    console.error("Error creating super admin:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while creating super admin",
-      error: error.message,
-    });
-  }
-};
+// **REMOVED for security.** This should be a one-time script, not an API endpoint.
+// A setup script would connect to the DB and create the first admin user securely.
+/*
+export const createSuperAdmin = async (req, res) => { ... };
+*/
 
 
 // Get admin dashboard statistics
@@ -327,15 +277,16 @@ export const updateUserStatus = async (req, res) => {
     }
 
     let user;
+    // **FIX: Added .select('-password') to prevent leaking password hash**
     switch (userType) {
       case 'student':
-        user = await Student.findByIdAndUpdate(userId, { isActive }, { new: true });
+        user = await Student.findByIdAndUpdate(userId, { isActive }, { new: true }).select('-password');
         break;
       case 'counsellor':
-        user = await Counsellor.findByIdAndUpdate(userId, { isActive }, { new: true });
+        user = await Counsellor.findByIdAndUpdate(userId, { isActive }, { new: true }).select('-password');
         break;
       case 'volunteer':
-        user = await Volunteer.findByIdAndUpdate(userId, { isActive }, { new: true });
+        user = await Volunteer.findByIdAndUpdate(userId, { isActive }, { new: true }).select('-password');
         break;
       default:
         return res.status(400).json({ success: false, message: "Invalid user type" });

@@ -17,6 +17,9 @@ export default function StudentVolunteersPage() {
     console.log("Connect with volunteer:", volunteerId);
   };
 
+
+  console.log(data)
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Find a Peer Volunteer</h1>

@@ -12,17 +12,17 @@ import {
   getSystemAnalytics,
   emergencyAccess,
   getUserById,
-  createSuperAdmin,
-  getProfile,    // ADDED
-  updateProfile, // ADDED
+  // createSuperAdmin, // REMOVED FOR SECURITY
+  getProfile,
+  updateProfile,
 } from "../controllers/admin.controller.js";
 import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
 
-// This route should be protected but doesn't require admin role.
-// It's for initial setup. In production, it should be removed or heavily secured.
-router.post("/create-super-admin", createSuperAdmin);
+// The create-super-admin route has been removed for security.
+// This task should be handled by a secure, one-time setup script.
+// router.post("/create-super-admin", createSuperAdmin);
 
 // All subsequent routes require admin role
 router.use(protect, requireRole([ROLES.ADMIN]));

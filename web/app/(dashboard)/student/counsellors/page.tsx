@@ -1,5 +1,6 @@
-// web/app/(dashboard)/student/counsellors/page.tsx
 "use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,11 +12,19 @@ export default function StudentCounsellorsPage() {
   const { data: counsellorsResponse, isLoading } = useAvailableCounsellors();
   const connectMutation = useConnectCounsellor();
 
+  // Track connected counsellors locally (optimistic update)
+  const [connectedIds, setConnectedIds] = useState<string[]>([]);
+
   const handleConnect = (counsellorId: string) => {
-    connectMutation.mutate(counsellorId);
+    connectMutation.mutate(counsellorId, {
+      onSuccess: () => {
+        // Optimistically mark as connected
+        setConnectedIds((prev) => [...prev, counsellorId]);
+      }
+    });
   };
 
-  // FIX: Access the nested data array for mapping
+  // Access nested data array
   const counsellors = counsellorsResponse?.data || [];
 
   return (
@@ -23,7 +32,11 @@ export default function StudentCounsellorsPage() {
       <h1 className="text-3xl font-bold">Find a Counsellor</h1>
       <p className="text-muted-foreground">Browse and connect with available counsellors.</p>
       
-      {isLoading && <div className="flex justify-center py-8"><Spinner size="lg" /></div>}
+      {isLoading && (
+        <div className="flex justify-center py-8">
+          <Spinner size="lg" />
+        </div>
+      )}
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {counsellors.map((counsellor: any) => (
@@ -35,19 +48,32 @@ export default function StudentCounsellorsPage() {
               </Avatar>
               <div>
                 <CardTitle>{counsellor.name}</CardTitle>
-                {/* FIX: Join array for display */}
-                <CardDescription>{Array.isArray(counsellor.specialization) ? counsellor.specialization.join(', ') : counsellor.specialization}</CardDescription>
+                <CardDescription>
+                  {Array.isArray(counsellor.specialization)
+                    ? counsellor.specialization.join(", ")
+                    : counsellor.specialization}
+                </CardDescription>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-3 h-[60px]">{counsellor.description}</p>
-              <Button 
-                className="w-full" 
+              <p className="text-sm text-muted-foreground line-clamp-3 h-[60px]">
+                {counsellor.description}
+              </p>
+              <Button
+                className="w-full cursor-pointer"
                 onClick={() => handleConnect(counsellor._id)}
-                disabled={connectMutation.isPending}
+                disabled={
+                  connectMutation.isPending || connectedIds.includes(counsellor._id)
+                }
               >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Connect
+                {connectedIds.includes(counsellor._id) ? (
+                  "Connected"
+                ) : (
+                  <>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Connect
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>

@@ -45,7 +45,7 @@ export default function StudentBookingsPage() {
         {/* TODO: Add a "New Booking" button with a Dialog form */}
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4"/> New Booking</Button>
+                <Button className="cursor-pointer"><Plus className="mr-2 h-4 w-4"/> New Booking</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader><DialogTitle>Book a new Session</DialogTitle></DialogHeader>

@@ -26,6 +26,8 @@ export function CreateBookingForm({ setDialogOpen }: { setDialogOpen: (open: boo
     const { data: counsellorsResponse, isLoading: isLoadingCounsellors } = useAvailableCounsellors();
     const counsellors = counsellorsResponse?.data || [];
 
+    console.log(counsellors)
+
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const selectedCounsellorId = watch("counsellorId");
     

@@ -49,7 +49,7 @@ export default function StudentReportsPage() {
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold">My Reports</h1>
                 <Link href="/student/create-report">
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> New Report</Button>
+                    <Button className="cursor-pointer"><PlusCircle className="mr-2 h-4 w-4"/> New Report</Button>
                 </Link>
             </div>
             <Table>

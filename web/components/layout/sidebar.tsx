@@ -89,7 +89,7 @@ export function Sidebar({ className }: SidebarProps) {
           },
           {
             title: "Peer Support",
-            href: "/chat/general", // UPDATED: Link to a default chat room
+            href: "/chat/general",
             icon: MessageSquare,
             badge: null
           },
@@ -210,7 +210,6 @@ export function Sidebar({ className }: SidebarProps) {
             icon: Settings,
             badge: null
           },
-          // ADDED: Admin Profile and Notifications link
           {
             title: "Notifications",
             href: "/admin/notifications",
@@ -256,7 +255,8 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 space-y-2 p-4 overflow-y-auto">
         {navigationItems.map((item) => {
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          // --- FIX IS HERE ---
+          const isActive = pathname === item.href;
           const Icon = item.icon;
 
           return (
@@ -264,7 +264,7 @@ export function Sidebar({ className }: SidebarProps) {
               <Button
                 variant={isActive ? "default" : "ghost"}
                 className={cn(
-                  "w-full justify-start",
+                  "w-full justify-start mb-2 cursor-pointer",
                   isCollapsed ? "justify-center px-2" : "px-4"
                 )}
               >

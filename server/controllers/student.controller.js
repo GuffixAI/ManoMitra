@@ -100,39 +100,57 @@ export const getDashboardData = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 // Get available counsellors
 export const getAvailableCounsellors = async (req, res) => {
   try {
-    const { page = 1, limit = 10, specialization, search } = req.query;
-    
-    const query = { isActive: true };
-    if (specialization) query.specialization = { $regex: specialization, $options: 'i' };
-    if (search) query.name = { $regex: search, $options: 'i' };
+    // 1. Destructure and set defaults
+    const { specialization, search } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
 
+    // Log the raw query for debugging
+    console.log("Received query params:", req.query);
+
+    // 2. Build the query object safely
+    const query = { isActive: true };
+
+    // VALIDATION: Ensure 'specialization' is a string before adding to the query
+    if (specialization && typeof specialization === 'string') {
+      query.specialization = { $regex: specialization, $options: 'i' };
+    }
+
+    // VALIDATION: Ensure 'search' is a string before adding to the query
+    if (search && typeof search === 'string') {
+      query.name = { $regex: search, $options: 'i' };
+    }
+
+    // 3. Execute database operations
     const counsellors = await Counsellor.find(query)
       .select('name email specialization description availableTime')
-      .limit(limit * 1)
+      .limit(limit) // limit is already a number
       .skip((page - 1) * limit)
       .sort({ name: 1 });
 
     const total = await Counsellor.countDocuments(query);
 
+    // 4. Send the successful response
     res.status(200).json({
       success: true,
       data: counsellors,
       pagination: {
-        currentPage: parseInt(page),
+        currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: parseInt(limit)
+        itemsPerPage: limit
       }
     });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    // 5. Use console.error for better logging
+    console.error("ERROR in getAvailableCounsellors:", error);
+    res.status(500).json({ success: false, message: "An error occurred while fetching counsellors." });
   }
 };
-
 // Get available volunteers
 export const getAvailableVolunteers = async (req, res) => {
   try {
@@ -160,6 +178,8 @@ export const getAvailableVolunteers = async (req, res) => {
         itemsPerPage: parseInt(limit)
       }
     });
+
+    console.log(`Volunteer ${volunteers}`)
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

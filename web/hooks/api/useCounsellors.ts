@@ -22,7 +22,6 @@ export const useMyStudents = (params?: any) => {
 export const useCounsellorSchedule = () => {
   return useQuery({
       queryKey: ["counsellorSchedule"],
-      // FIX: Removed redundant .then()
       queryFn: () => counsellorAPI.getSchedule()
   });
 };

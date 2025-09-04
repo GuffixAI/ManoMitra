@@ -1,103 +1,114 @@
+// web/app/pre-dashboard/page.tsx
 "use client";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowRight, Bot, LayoutDashboard, MessageCircleQuestion } from "lucide-react";
-import Link from "next/link";
-import { motion } from "motion/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useAuthStore } from "@/store/auth.store";
+import { motion } from "motion/react";
+import { ArrowRight, Bot, MessageCircleQuestion } from "lucide-react";
+import Link from "next/link";
 
 export default function PreDashboardPage() {
   const { user } = useAuthStore();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 lg:p-8">
+      {/* Dashboard Button: Top Right Corner */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-5xl text-center"
+        className="absolute top-6 right-6 md:top-8 md:right-8 bg-white rounded-lg"
       >
-        <h1 className="text-4xl font-bold">Welcome, {user?.name}!</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Your mental wellness journey is important. How would you like to proceed?</p>
+        <Link href="/student" passHref>
+          <div
+            className="rounded-lg bg-white text-gray-800 shadow-md hover:bg-gray-200 px-4 py-2"
+          >
+            Dashboard
+          </div>
+        </Link>
       </motion.div>
-      <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-5xl">
-        {/* Card 1: Conversational Bot */}
+
+      {/* Main Content Area */}
+      <div className="flex w-full max-w-5xl flex-col items-center">
+        {/* Welcome Message */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="w-full text-center"
         >
-          <Card className="h-full flex flex-col hover:border-primary transition-all">
-            <CardHeader>
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 text-primary mb-4 mx-auto">
-                <MessageCircleQuestion />
-              </div>
-              <CardTitle className="text-center">Guided Conversation</CardTitle>
-              <CardDescription className="text-center">
-                Work through structured exercises and coping strategies with a guided bot.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col justify-end">
-              <Link href="/conversational-bot" passHref>
-                <Button className="w-full">
-                  Start Guided Session <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <h1 className="text-4xl font-bold">Welcome, {user?.name}!</h1>
+          <p className="mt-2 text-lg text-muted-foreground">
+            Your mental wellness journey is important. How would you like to
+            proceed?
+          </p>
         </motion.div>
 
-        {/* Card 2: Chat-based Bot */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Card className="h-full flex flex-col hover:border-primary transition-all">
-            <CardHeader>
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 text-primary mb-4 mx-auto">
-                <Bot />
-              </div>
-              <CardTitle className="text-center">AI Chat Assistant</CardTitle>
-              <CardDescription className="text-center">
-                Have an open, free-form conversation with an AI assistant whenever you need to talk.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col justify-end">
-              <Link href="/chat-bot" passHref>
-                <Button className="w-full">
-                  Open Chat <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        {/* Card 3: Go to Dashboard */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-        >
-          <Card className="h-full flex flex-col hover:border-secondary-foreground transition-all">
-            <CardHeader>
-              <div className="flex items-center justify-center h-12 w-12 rounded-full bg-secondary/10 text-secondary-foreground mb-4 mx-auto">
-                <LayoutDashboard />
-              </div>
-              <CardTitle className="text-center">My Dashboard</CardTitle>
-              <CardDescription className="text-center">
-                Access your resources, book appointments, and manage your reports.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col justify-end">
-              <Link href="/student" passHref>
-                <Button variant="secondary" className="w-full">
-                  Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Horizontal Cards Container */}
+        <div className="mt-16 flex w-full max-w-4xl flex-col items-stretch justify-center gap-8 md:flex-row">
+          {/* Card 1: Guided Conversation */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="w-full md:w-1/2"
+          >
+            <Card className="flex h-full flex-col transition-all hover:border-primary">
+              <CardHeader>
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <MessageCircleQuestion />
+                </div>
+                <CardTitle className="text-center">Guided Conversation</CardTitle>
+                <CardDescription className="text-center">
+                  Work through structured exercises and coping strategies with a
+                  guided bot.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-grow flex-col justify-end">
+                <Link href="/conversational-bot" passHref>
+                  <Button className="w-full cursor-pointer">
+                    Start Guided Session <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Card 2: AI Chat Assistant */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="w-full md:w-1/2"
+          >
+            <Card className="flex h-full flex-col transition-all hover:border-primary">
+              <CardHeader>
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Bot />
+                </div>
+                <CardTitle className="text-center">AI Chat Assistant</CardTitle>
+                <CardDescription className="text-center">
+                  Have an open, free-form conversation with an AI assistant
+                  whenever you need to talk.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-grow flex-col justify-end">
+                <Link href="/chat-bot" passHref>
+                  <Button className="w-full cursor-pointer">
+                    Open Chat <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

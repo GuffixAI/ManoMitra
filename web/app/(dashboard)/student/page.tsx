@@ -118,21 +118,21 @@ export default function StudentDashboardPage() {
                 <span>Quick Actions</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 ">
               <Link href="/student/bookings">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start cursor-pointer mb-2">
                   <Calendar className="mr-2 h-4 w-4" />
                   Book a Counselling Session
                 </Button>
               </Link>
               <Link href="/student/create-report">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start cursor-pointer mb-2">
                   <FileText className="mr-2 h-4 w-4" />
                   Create a New Confidential Report
                 </Button>
               </Link>
               <Link href="/chat/general">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start cursor-pointer ">
                   <MessageSquare className="mr-2 h-4 w-4" />
                   Join a Peer Support Room
                 </Button>
