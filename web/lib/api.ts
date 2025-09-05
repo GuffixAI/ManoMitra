@@ -156,6 +156,14 @@ export const notificationAPI = {
   archive: async (id: string) => api.put(`/notifications/${id}/archive`).then(res => res.data),
   unarchive: async (id: string) => api.put(`/notifications/${id}/unarchive`).then(res => res.data),
   delete: async (id: string) => api.delete(`/notifications/${id}`).then(res => res.data),
+  getAdminUserNotifications: async (userId: string, userModel: string, params?: any) => 
+    api.get(`/notifications/admin/user/${userId}/${userModel}`, { params }).then(res => res.data),
+  sendSystemNotification: async (data: any) => 
+    api.post('/notifications/admin/system', data).then(res => res.data),
+  getNotificationStats: async () => 
+    api.get('/notifications/admin/stats').then(getData),
+  cleanupExpiredNotifications: async () => 
+    api.post('/notifications/admin/cleanup').then(res => res.data),
 };
 
 
@@ -176,4 +184,10 @@ export const roomAPI = {
   getRoomMessages: async (topic: string, params?: any) => api.get(`/rooms/${topic}/messages`, { params }).then(res => res.data),
   addModerator: async (topic: string, volunteerId: string) => api.post('/rooms/moderators', { topic, volunteerId }).then(res => res.data), // Admin
   removeModerator: async (topic: string, volunteerId: string) => api.delete(`/rooms/${topic}/moderators/${volunteerId}`).then(res => res.data), // Admin
+  getRoomStats: async (topic: string) => 
+    api.get(`/rooms/${topic}/stats`).then(getData),
+  getRoomActivity: async (topic: string) => 
+    api.get(`/rooms/${topic}/activity`).then(getData),
+  updateRoomDescription: async (topic: string, description: string) => 
+    api.put(`/rooms/${topic}/description`, { description }).then(res => res.data),
 };
