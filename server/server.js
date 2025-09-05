@@ -25,6 +25,9 @@ import Volunteer from "./models/volunteer.model.js";
 import Admin from "./models/admin.model.js";
 
 
+import { devLogging, prodLogging, errorLogging } from './middlewares/logging.middleware.js';
+
+
 dotenv.config();
 const app = express();
 
@@ -53,6 +56,14 @@ app.use(helmet({
   },
 }));
 app.use(cookieParser());
+
+
+if (process.env.NODE_ENV === 'production') {
+    app.use(prodLogging);
+    app.use(errorLogging);
+} else {
+    app.use(devLogging);
+}
 
 // Enhanced rate limiting
 const limiter = rateLimit({

@@ -1,24 +1,31 @@
 // FILE: web/app/(dashboard)/student/volunteers/page.tsx
 "use client";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare } from "lucide-react";
-import { useAvailableVolunteers } from "@/hooks/api/useStudents";
+import { UserPlus, CheckCircle } from "lucide-react";
+import { useAvailableVolunteers, useConnectVolunteer } from "@/hooks/api/useStudents";
 
 export default function StudentVolunteersPage() {
-  const { data, isLoading } = useAvailableVolunteers();
+  const { data: volunteersResponse, isLoading } = useAvailableVolunteers();
+  const connectMutation = useConnectVolunteer();
 
-  // Placeholder for connect functionality
+  // Track connected volunteers optimistically for better UX
+  const [connectedIds, setConnectedIds] = useState<string[]>([]);
+
   const handleConnect = (volunteerId: string) => {
-    // This would be implemented with a mutation, similar to connecting with a counsellor
-    console.log("Connect with volunteer:", volunteerId);
+    connectMutation.mutate(volunteerId, {
+      onSuccess: () => {
+        // Optimistically mark as connected
+        setConnectedIds((prev) => [...prev, volunteerId]);
+      }
+    });
   };
-
-
-  console.log(data)
+  
+  const volunteers = volunteersResponse?.data || [];
 
   return (
     <div className="space-y-6">
@@ -28,8 +35,7 @@ export default function StudentVolunteersPage() {
       {isLoading && <div className="flex justify-center py-8"><Spinner size="lg" /></div>}
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* **BUG FIX:** Changed to data?.data.map to align with standardized API response */}
-        {data?.data.map((volunteer: any) => (
+        {volunteers.map((volunteer: any) => (
           <Card key={volunteer._id}>
             <CardHeader className="flex flex-row items-center gap-4">
               <Avatar className="h-12 w-12">
@@ -44,13 +50,20 @@ export default function StudentVolunteersPage() {
             <CardContent className="space-y-4">
               <div className="space-x-2">
                   {volunteer.preferredTopics.slice(0, 3).map((topic: string) => (
-                      <Badge key={topic} variant="secondary">{topic}</Badge>
+                      <Badge key={topic} variant="secondary" className="capitalize">{topic}</Badge>
                   ))}
               </div>
               <p className="text-sm text-muted-foreground line-clamp-2 h-[40px]">{volunteer.description}</p>
-              <Button className="w-full" variant="outline" onClick={() => handleConnect(volunteer._id)}>
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Chat (Coming Soon)
+              <Button 
+                className="w-full" 
+                onClick={() => handleConnect(volunteer._id)}
+                disabled={connectMutation.isPending || connectedIds.includes(volunteer._id)}
+              >
+                {connectedIds.includes(volunteer._id) ? (
+                    <><CheckCircle className="mr-2 h-4 w-4" /> Connected</>
+                ) : (
+                    <><UserPlus className="mr-2 h-4 w-4" /> Connect</>
+                )}
               </Button>
             </CardContent>
           </Card>

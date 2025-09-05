@@ -22,7 +22,8 @@ import {
   Heart,
   BookOpen,
   BarChart3,
-  HelpCircle
+  HelpCircle,
+  Star,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -55,173 +56,179 @@ export function Sidebar({ className }: SidebarProps) {
         title: "Dashboard",
         href: `/${user.role}`,
         icon: Home,
-        badge: null
-      }
+        badge: null,
+      },
     ];
 
     switch (user.role) {
-      case 'student':
+      case "student":
         return [
           ...baseItems,
           {
             title: "Bookings",
             href: "/student/bookings",
             icon: Calendar,
-            badge: null
+            badge: null,
           },
           {
             title: "Reports",
             href: "/student/reports",
             icon: FileText,
-            badge: null
+            badge: null,
+          },
+          {
+            title: "Feedback",
+            href: "/student/feedback",
+            icon: Star,
+            badge: null,
           },
           {
             title: "Counsellors",
             href: "/student/counsellors",
             icon: Users,
-            badge: null
+            badge: null,
           },
           {
             title: "Volunteers",
             href: "/student/volunteers",
             icon: Heart,
-            badge: null
+            badge: null,
           },
           {
             title: "Peer Support",
             href: "/chat/general",
             icon: MessageSquare,
-            badge: null
+            badge: null,
           },
           {
             title: "Notifications",
             href: "/student/notifications",
             icon: Bell,
-            badge: null
+            badge: null,
           },
           {
             title: "Profile",
             href: "/student/profile",
             icon: User,
-            badge: null
-          }
+            badge: null,
+          },
         ];
 
-      case 'counsellor':
+      case "counsellor":
         return [
           ...baseItems,
           {
             title: "Schedule",
             href: "/counsellor/schedule",
             icon: Calendar,
-            badge: null
+            badge: null,
           },
           {
             title: "Students",
             href: "/counsellor/students",
             icon: Users,
-            badge: null
+            badge: null,
           },
           {
             title: "Reports",
             href: "/counsellor/reports",
             icon: FileText,
-            badge: null
+            badge: null,
           },
           {
             title: "Performance",
             href: "/counsellor/performance",
             icon: BarChart3,
-            badge: null
+            badge: null,
           },
           {
             title: "Notifications",
             href: "/counsellor/notifications",
             icon: Bell,
-            badge: null
+            badge: null,
           },
           {
             title: "Profile",
             href: "/counsellor/profile",
             icon: User,
-            badge: null
-          }
+            badge: null,
+          },
         ];
 
-      case 'volunteer':
+      case "volunteer":
         return [
           ...baseItems,
           {
             title: "Rooms",
             href: "/volunteer/rooms",
             icon: MessageSquare,
-            badge: null
+            badge: null,
           },
           {
             title: "Performance",
             href: "/volunteer/performance",
             icon: BarChart3,
-            badge: null
+            badge: null,
           },
           {
             title: "Training",
             href: "/volunteer/training",
             icon: BookOpen,
-            badge: null
+            badge: null,
           },
           {
             title: "Notifications",
             href: "/volunteer/notifications",
             icon: Bell,
-            badge: null
+            badge: null,
           },
           {
             title: "Profile",
             href: "/volunteer/profile",
             icon: User,
-            badge: null
-          }
+            badge: null,
+          },
         ];
 
-      case 'admin':
+      case "admin":
         return [
           ...baseItems,
           {
             title: "Users",
             href: "/admin/users",
             icon: Users,
-            badge: null
+            badge: null,
           },
           {
             title: "Reports",
             href: "/admin/reports",
             icon: FileText,
-            badge: null
+            badge: null,
           },
           {
             title: "Analytics",
             href: "/admin/analytics",
             icon: BarChart3,
-            badge: null
+            badge: null,
           },
           {
             title: "System",
             href: "/admin/system",
             icon: Settings,
-            badge: null
+            badge: null,
           },
           {
             title: "Notifications",
             href: "/admin/notifications",
             icon: Bell,
-            badge: null
+            badge: null,
           },
           {
             title: "Profile",
             href: "/admin/profile",
             icon: User,
-            badge: null
-          }
+            badge: null,
+          },
         ];
 
       default:
@@ -232,11 +239,13 @@ export function Sidebar({ className }: SidebarProps) {
   const navigationItems = getNavigationItems();
 
   const SidebarContent = () => (
-    <div className={cn(
-      "flex h-full flex-col bg-card border-r transition-all duration-300 ease-in-out",
-      isCollapsed ? "w-16" : "w-64",
-      className
-    )}>
+    <div
+      className={cn(
+        "flex h-full flex-col bg-card border-r transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-16" : "w-64",
+        className
+      )}
+    >
       {/* Header */}
       <div className="flex h-16 items-center border-b px-4">
         {!isCollapsed && (
@@ -260,7 +269,11 @@ export function Sidebar({ className }: SidebarProps) {
           const Icon = item.icon;
 
           return (
-            <Link key={item.href} href={item.href} onClick={() => isMobileOpen && setIsMobileOpen(false)}>
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => isMobileOpen && setIsMobileOpen(false)}
+            >
               <Button
                 variant={isActive ? "default" : "ghost"}
                 className={cn(
@@ -268,10 +281,9 @@ export function Sidebar({ className }: SidebarProps) {
                   isCollapsed ? "justify-center px-2" : "px-4"
                 )}
               >
-                <Icon className={cn(
-                  "h-4 w-4",
-                  isCollapsed ? "mx-0" : "mr-3"
-                )} />
+                <Icon
+                  className={cn("h-4 w-4", isCollapsed ? "mx-0" : "mr-3")}
+                />
                 {!isCollapsed && (
                   <>
                     <span className="flex-1 text-left">{item.title}</span>
@@ -291,7 +303,10 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Footer */}
       <div className="border-t p-4 space-y-2 mt-auto">
         {/* Help */}
-        <Link href="/help" onClick={() => isMobileOpen && setIsMobileOpen(false)}>
+        <Link
+          href="/help"
+          onClick={() => isMobileOpen && setIsMobileOpen(false)}
+        >
           <Button
             variant="ghost"
             className={cn(
@@ -299,10 +314,9 @@ export function Sidebar({ className }: SidebarProps) {
               isCollapsed ? "justify-center px-2" : "px-4"
             )}
           >
-            <HelpCircle className={cn(
-              "h-4 w-4",
-              isCollapsed ? "mx-0" : "mr-3"
-            )} />
+            <HelpCircle
+              className={cn("h-4 w-4", isCollapsed ? "mx-0" : "mr-3")}
+            />
             {!isCollapsed && <span>Help & Support</span>}
           </Button>
         </Link>
@@ -316,10 +330,7 @@ export function Sidebar({ className }: SidebarProps) {
             isCollapsed ? "justify-center px-2" : "px-4"
           )}
         >
-          <LogOut className={cn(
-            "h-4 w-4",
-            isCollapsed ? "mx-0" : "mr-3"
-          )} />
+          <LogOut className={cn("h-4 w-4", isCollapsed ? "mx-0" : "mr-3")} />
           {!isCollapsed && <span>Logout</span>}
         </Button>
       </div>
@@ -342,7 +353,11 @@ export function Sidebar({ className }: SidebarProps) {
           className="fixed top-3 left-3 z-50 md:hidden bg-background/50 backdrop-blur-sm"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
         >
-          {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          {isMobileOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
         </Button>
 
         {/* Mobile Overlay */}
