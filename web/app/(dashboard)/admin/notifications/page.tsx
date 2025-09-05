@@ -1,4 +1,5 @@
-// web/app/(dashboard)/admin/notifications/page.tsx
+
+// FILE: web/app/(dashboard)/admin/notifications/page.tsx
 "use client";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 

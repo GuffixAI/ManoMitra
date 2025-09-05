@@ -1,4 +1,4 @@
-// MODIFIED: web/app/(dashboard)/counsellor/profile/page.tsx
+// FILE: web/app/(dashboard)/counsellor/profile/page.tsx
 "use client";
 import { useCounsellorProfile, useUpdateCounsellorProfile } from "@/hooks/api/useCounsellors"; // MODIFIED
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

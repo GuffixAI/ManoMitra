@@ -23,7 +23,6 @@ const reportSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      // **FIX: Aligned enum with the validation schema for consistency**
       enum: [
         "academic",
         "personal",
