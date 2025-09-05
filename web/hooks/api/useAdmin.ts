@@ -83,3 +83,22 @@ export const useUpdateUserStatus = () => {
         }
     });
 };
+
+
+export const useEmergencyAccess = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ userId, userType, action }: { userId: string, userType: string, action: 'suspend' | 'activate' }) =>
+            adminAPI.emergencyAccess(userId, userType, action),
+        onSuccess: (_, { userType, action }) => {
+            // Invalidate all user lists as a precaution
+            queryClient.invalidateQueries({ queryKey: ['allStudents'] });
+            queryClient.invalidateQueries({ queryKey: ['allCounsellors'] });
+            queryClient.invalidateQueries({ queryKey: ['allVolunteers'] });
+            toast.success(`User successfully ${action}ed.`);
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Emergency action failed.");
+        }
+    });
+};

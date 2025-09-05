@@ -124,3 +124,18 @@ export const useUpdateStudentPreferences = () => {
         }
     });
 };
+
+
+export const useUpdateStudentActivity = () => {
+  return useMutation({
+    mutationFn: () => studentAPI.updateLastActive(),
+    onSuccess: () => {
+      // This is often a silent background task, so no toast is necessary
+      console.log("Student activity updated.");
+    },
+    onError: (err: any) => {
+      // Also silent, as it's not a critical user-facing action
+      console.error("Failed to update student activity:", err.response?.data?.message);
+    },
+  });
+};

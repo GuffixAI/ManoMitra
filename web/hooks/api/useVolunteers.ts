@@ -99,3 +99,17 @@ export const useUpdateVolunteerAvailability = () => {
         }
     });
 };
+
+
+export const useUpdateVolunteerActivity = () => {
+  return useMutation({
+    mutationFn: () => volunteerAPI.updateLastActive(),
+    onSuccess: () => {
+      // Silent background task
+      console.log("Volunteer activity updated.");
+    },
+    onError: (err: any) => {
+      console.error("Failed to update volunteer activity:", err.response?.data?.message);
+    },
+  });
+};
