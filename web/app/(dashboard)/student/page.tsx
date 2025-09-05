@@ -19,16 +19,19 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { Spinner } from "@/components/ui/spinner";
 import dayjs from "dayjs";
+import { useStudentDashboard } from "@/hooks/api/useStudents"; 
 
 export default function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
 
-  // Fetch dashboard data
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ['student-dashboard'],
-    queryFn: () => studentAPI.getDashboard(), // This now returns the correct data shape
-    enabled: !!user
-  });
+  const { data: dashboardData, isLoading } = useStudentDashboard();
+
+  // // Fetch dashboard data
+  // const { data: dashboardData, isLoading } = useQuery({
+  //   queryKey: ['student-dashboard'],
+  //   queryFn: () => studentAPI.getDashboard(), // This now returns the correct data shape
+  //   enabled: !!user
+  // });
 
   const StatCard = ({ title, value, icon: Icon, link, linkText, colorClass = "text-primary" }: any) => (
     <Card>

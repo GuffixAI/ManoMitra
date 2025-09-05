@@ -188,6 +188,8 @@ export const roomAPI = {
     api.get(`/rooms/${topic}/stats`).then(getData),
   getRoomActivity: async (topic: string) => 
     api.get(`/rooms/${topic}/activity`).then(getData),
+  createRoom: async (data: { topic: string, description?: string }) => 
+    api.post('/rooms', data).then(res => res.data),
   updateRoomDescription: async (topic: string, description: string) => 
     api.put(`/rooms/${topic}/description`, { description }).then(res => res.data),
 };

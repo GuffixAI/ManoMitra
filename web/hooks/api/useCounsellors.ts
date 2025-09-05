@@ -90,3 +90,25 @@ export const useUpdateAvailability = () => {
         }
     });
 }
+
+export const useCounsellorProfile = () => {
+    return useQuery({
+        queryKey: ["counsellorProfile"],
+        queryFn: () => counsellorAPI.getProfile(),
+    });
+};
+
+// Add a student connection
+export const useAddStudent = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (studentId: string) => counsellorAPI.addStudent(studentId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['myStudents'] });
+            toast.success("Student added successfully!");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to add student.");
+        }
+    });
+};

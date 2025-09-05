@@ -333,3 +333,44 @@ export const getRoomActivity = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+
+// ADDED: Create a new room (admin only)
+export const createRoom = async (req, res) => {
+  try {
+    const { topic, description } = req.body;
+    
+    if (!topic || !description) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Topic and description are required" 
+      });
+    }
+
+    if (PEER_TOPICS.includes(topic)) {
+        return res.status(409).json({
+            success: false,
+            message: "A default room with this topic already exists."
+        });
+    }
+
+    const existingRoom = await Room.findOne({ topic });
+    if (existingRoom) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "A room with this topic already exists" 
+      });
+    }
+
+    const room = await Room.create({ topic, description });
+
+    res.status(201).json({
+      success: true,
+      message: "Room created successfully",
+      data: room
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

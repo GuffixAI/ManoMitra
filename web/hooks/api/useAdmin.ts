@@ -2,6 +2,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth.store";
+import { Admin, User } from "@/types/auth"; 
+
+
 
 export const useAdminDashboardStats = () => {
   return useQuery({
@@ -52,6 +56,34 @@ export const useUserById = (userId: string, userModel: string) => {
         enabled: !!userId && !!userModel,
     });
 };
+
+// Get the current admin's profile
+export const useAdminProfile = () => {
+  return useQuery<Admin>({ // Using the Admin type
+    queryKey: ["adminProfile"],
+    queryFn: () => adminAPI.getProfile(),
+  });
+};
+
+// Update the current admin's profile
+export const useUpdateAdminProfile = () => {
+  const queryClient = useQueryClient();
+  const { user, setUser } = useAuthStore.getState();
+
+  return useMutation({
+    mutationFn: (profileData: Partial<Admin>) => adminAPI.updateProfile(profileData),
+    onSuccess: (response) => {
+      const updatedAdmin = response.data;
+      queryClient.invalidateQueries({ queryKey: ["adminProfile"] });
+      setUser({ ...user, ...updatedAdmin } as User); // Update user in Zustand
+      toast.success("Profile updated successfully!");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to update profile.");
+    },
+  });
+};
+
 
 export const useAssignReport = () => {
     const queryClient = useQueryClient();

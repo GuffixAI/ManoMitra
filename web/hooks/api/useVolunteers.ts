@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { volunteerAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth.store";
+import { Volunteer } from "@/types/auth";
+
 
 
 
@@ -10,7 +13,7 @@ import { toast } from "sonner";
 export const useMyVolunteerRating = () => {
     return useQuery({
         queryKey: ['myVolunteerRating'],
-        queryFn: () => volunteerAPI.getDashboard().then(res => ({ rating: res.data.rating, feedbackCount: res.data.feedbackCount })), // FIX: unwrap data
+        queryFn: () => volunteerAPI.getDashboard().then(res => ({ rating: res.data.rating, feedbackCount: res.data.feedbackCount })),
     });
 };
 
@@ -70,6 +73,14 @@ export const useVolunteerAvailabilityStatus = () => {
     });
 };
 
+// Get Volunteer's own Profile
+export const useVolunteerProfile = () => {
+    return useQuery<Volunteer>({ // Using the Volunteer type
+        queryKey: ["volunteerProfile"],
+        queryFn: () => volunteerAPI.getProfile(),
+    });
+};
+
 // Update Volunteer Profile
 export const useUpdateVolunteerProfile = () => {
     const queryClient = useQueryClient();
@@ -100,6 +111,24 @@ export const useUpdateVolunteerAvailability = () => {
     });
 };
 
+// Mark training as complete
+export const useCompleteTraining = () => {
+    const queryClient = useQueryClient();
+    const setUser = useAuthStore(s => s.setUser);
+
+    return useMutation({
+        mutationFn: () => volunteerAPI.completeTraining(),
+        onSuccess: (response) => {
+            const updatedUser = response.data;
+            setUser(updatedUser); // Update user in Zustand store
+            queryClient.invalidateQueries({ queryKey: ["volunteerProfile"] });
+            toast.success("Training marked as complete!");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to update training status.");
+        }
+    });
+};
 
 export const useUpdateVolunteerActivity = () => {
   return useMutation({
@@ -112,4 +141,4 @@ export const useUpdateVolunteerActivity = () => {
       console.error("Failed to update volunteer activity:", err.response?.data?.message);
     },
   });
-};
+}

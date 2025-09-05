@@ -10,7 +10,8 @@ import {
   addModerator,
   removeModerator,
   updateRoomDescription,
-  getRoomActivity
+  getRoomActivity,
+  createRoom
 } from "../controllers/room.controller.js";
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.get("/:topic/stats", getRoomStats);
 router.get("/:topic/activity", getRoomActivity);
 
 // Admin routes (require authentication and admin role)
+router.post("/", protect, requireRole([ROLES.ADMIN]), createRoom);
 router.post("/moderators", protect, requireRole([ROLES.ADMIN]), addModerator);
 router.delete("/:topic/moderators/:volunteerId", protect, requireRole([ROLES.ADMIN]), removeModerator);
 router.put("/:topic/description", protect, requireRole([ROLES.ADMIN]), updateRoomDescription);

@@ -9,26 +9,38 @@ import { authAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth.store";
+import { useChangePassword } from "@/hooks/api/useAuth";
+
 
 export function ChangePasswordForm({ setDialogOpen }: { setDialogOpen: (open: boolean) => void }) {
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm();
+  const changePasswordMutation = useChangePassword();
   const logout = useAuthStore(s => s.logout);
 
-  const changePasswordMutation = useMutation({
-    mutationFn: (data: any) => authAPI.changePassword(data),
-    onSuccess: () => {
-      toast.success("Password changed successfully. Please log in again.");
-      reset();
-      setDialogOpen(false);
-      logout(); // Log out the user for security
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to change password.");
-    }
-  });
+  // const changePasswordMutation = useMutation({
+  //   mutationFn: (data: any) => authAPI.changePassword(data),
+  //   onSuccess: () => {
+  //     toast.success("Password changed successfully. Please log in again.");
+  //     reset();
+  //     setDialogOpen(false);
+  //     logout(); // Log out the user for security
+  //   },
+  //   onError: (err: any) => {
+  //     toast.error(err.response?.data?.message || "Failed to change password.");
+  //   }
+  // });
+
+  // const onSubmit = (data: any) => {
+  //   changePasswordMutation.mutate(data);
+  // };
 
   const onSubmit = (data: any) => {
-    changePasswordMutation.mutate(data);
+    changePasswordMutation.mutate(data, {
+      onSuccess: () => {
+        reset();
+        setDialogOpen(false);
+      }
+    });
   };
 
   return (

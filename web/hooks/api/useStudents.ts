@@ -139,3 +139,10 @@ export const useUpdateStudentActivity = () => {
     },
   });
 };
+
+export const useStudentDashboard = () => {
+  return useQuery({
+    queryKey: ["studentDashboard"],
+    queryFn: () => studentAPI.getDashboard(),
+  });
+};

@@ -1,9 +1,8 @@
-// web/app/(dashboard)/admin/profile/page.tsx
+// MODIFIED: web/app/(dashboard)/admin/profile/page.tsx
 "use client";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAPI } from "@/lib/api"; // FIX: Use the updated adminAPI
+import { useAdminProfile, useUpdateAdminProfile } from "@/hooks/api/useAdmin"; // MODIFIED: Use the new hooks
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,30 +11,13 @@ import { Spinner } from "@/components/ui/spinner";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
-import { Admin } from "@/types/auth";
+import { Admin } from "@/types/auth"; 
 
 export default function AdminProfilePage() {
-  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
 
-  const { data: profile, isLoading: isLoadingProfile } = useQuery<Admin>({
-    queryKey: ["adminProfile", user?._id],
-    queryFn: () => adminAPI.getProfile(), // FIX: This now points to the correct function
-    enabled: !!user,
-  });
-
-  const updateProfileMutation = useMutation({
-    mutationFn: (profileData: Partial<Admin>) => adminAPI.updateProfile(profileData), // FIX: This now points to the correct function
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["adminProfile", user?._id] });
-      // Also update the user in the auth store
-      useAuthStore.getState().setUser({ ...user, ...data.data } as any);
-      toast.success("Profile updated successfully!");
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to update profile.");
-    },
-  });
+  const { data: profile, isLoading: isLoadingProfile } = useAdminProfile(); // MODIFIED
+  const updateProfileMutation = useUpdateAdminProfile(); // MODIFIED
 
   const { register, handleSubmit, setValue, formState: { errors, isDirty } } = useForm();
 

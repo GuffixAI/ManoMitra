@@ -12,25 +12,31 @@ import { useAuthStore } from "@/store/auth.store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { volunteerAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useCompleteTraining } from "@/hooks/api/useVolunteers";
+
+
+
 export default function VolunteerTrainingPage() {
   const queryClient = useQueryClient();
   const { user, setUser } = useAuthStore();
   const trainingCompleted = (user as any)?.trainingCompleted || false;
+
+  const completeTrainingMutation = useCompleteTraining();
   // ADDED: Mutation to mark training as complete
-  const completeTrainingMutation = useMutation({
-    mutationFn: () => volunteerAPI.completeTraining(),
-    onSuccess: (data) => {
-      // Update the user state in Zustand store
-      setUser(data.data);
-      queryClient.invalidateQueries({ queryKey: ["volunteerProfile"] });
-      toast.success("Training marked as complete! You can now moderate rooms.");
-    },
-    onError: (err: any) => {
-      toast.error(
-        err.response?.data?.message || "Failed to update training status."
-      );
-    },
-  });
+  // const completeTrainingMutation = useMutation({
+  //   mutationFn: () => volunteerAPI.completeTraining(),
+  //   onSuccess: (data) => {
+  //     // Update the user state in Zustand store
+  //     setUser(data.data);
+  //     queryClient.invalidateQueries({ queryKey: ["volunteerProfile"] });
+  //     toast.success("Training marked as complete! You can now moderate rooms.");
+  //   },
+  //   onError: (err: any) => {
+  //     toast.error(
+  //       err.response?.data?.message || "Failed to update training status."
+  //     );
+  //   },
+  // });
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -82,7 +88,7 @@ export default function VolunteerTrainingPage() {
               <Button
                 className="w-full"
                 onClick={() => completeTrainingMutation.mutate()}
-                disabled={completeTrainingMutation.isPending}
+                disabled={trainingCompleted || completeTrainingMutation.isPending}
               >
                 {completeTrainingMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

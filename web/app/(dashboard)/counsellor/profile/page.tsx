@@ -1,7 +1,6 @@
-// web/app/(dashboard)/counsellor/profile/page.tsx
+// MODIFIED: web/app/(dashboard)/counsellor/profile/page.tsx
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { counsellorAPI } from "@/lib/api";
+import { useCounsellorProfile, useUpdateCounsellorProfile } from "@/hooks/api/useCounsellors"; // MODIFIED
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,28 +9,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { Spinner } from "@/components/ui/spinner";
 import React from "react";
+import { Loader2 } from "lucide-react";
 
 export default function CounsellorProfilePage() {
-    const { data: profile, isLoading } = useQuery({
-        queryKey: ["counsellorProfile"],
-        queryFn: () => counsellorAPI.getProfile(),
-    });
+    const { data: profile, isLoading } = useCounsellorProfile(); // MODIFIED
+    const updateProfileMutation = useUpdateCounsellorProfile(); // MODIFIED
 
-    const { register, handleSubmit, setValue } = useForm();
+    const { register, handleSubmit, setValue, formState: { isDirty } } = useForm();
     
-    // Prefill form when data loads
     React.useEffect(() => {
         if (profile) {
             setValue("name", profile.name);
-            setValue("email", profile.email);
-            setValue("specialization", profile.specialization);
+            setValue("specialization", profile.specialization.join(', ')); // MODIFIED: Handle array
             setValue("description", profile.description);
         }
     }, [profile, setValue]);
 
     const onSubmit = (data: any) => {
-        // TODO: Implement mutation for profile update
-        console.log("Updated data:", data);
+        // MODIFIED: Convert comma-separated string back to array for the API
+        const updatedData = {
+            ...data,
+            specialization: data.specialization.split(',').map((s: string) => s.trim()).filter(Boolean)
+        };
+        updateProfileMutation.mutate(updatedData);
     };
 
     if (isLoading) {
@@ -54,17 +54,20 @@ export default function CounsellorProfilePage() {
                         </div>
                          <div>
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" {...register("email")} disabled />
+                            <Input id="email" type="email" defaultValue={profile?.email} disabled />
                         </div>
                          <div>
-                            <Label htmlFor="specialization">Specialization</Label>
+                            <Label htmlFor="specialization">Specialization (comma-separated)</Label>
                             <Input id="specialization" {...register("specialization")} />
                         </div>
                          <div>
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" {...register("description")} />
                         </div>
-                        <Button type="submit">Save Changes</Button>
+                        <Button type="submit" disabled={!isDirty || updateProfileMutation.isPending}>
+                            {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Changes
+                        </Button>
                     </form>
                 </CardContent>
             </Card>
