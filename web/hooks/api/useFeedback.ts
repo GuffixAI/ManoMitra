@@ -20,6 +20,22 @@ export const useFeedbackForTarget = (targetType: string, targetId: string) => {
   });
 };
 
+// Get top-rated counsellors and volunteers
+export const useTopRated = () => {
+    return useQuery({
+        queryKey: ["topRated"],
+        queryFn: feedbackAPI.getTopRated,
+    });
+};
+
+// Get aggregated feedback statistics (Admin only)
+export const useFeedbackStats = () => {
+    return useQuery({
+        queryKey: ["feedbackStats"],
+        queryFn: feedbackAPI.getStats,
+    });
+};
+
 // Submit new feedback
 export const useSubmitFeedback = () => {
   const queryClient = useQueryClient();
@@ -35,4 +51,36 @@ export const useSubmitFeedback = () => {
       toast.error(err.response?.data?.message || "Failed to submit feedback.");
     },
   });
+};
+
+// Update existing feedback
+export const useUpdateFeedback = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string, data: { rating?: number, comment?: string } }) =>
+            feedbackAPI.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["myFeedback"] });
+            // You may need to invalidate specific target feedback if viewing it
+            toast.success("Feedback updated.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to update feedback.");
+        }
+    });
+};
+
+// Delete existing feedback
+export const useDeleteFeedback = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => feedbackAPI.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["myFeedback"] });
+            toast.success("Feedback deleted.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to delete feedback.");
+        }
+    });
 };

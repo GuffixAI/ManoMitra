@@ -4,6 +4,8 @@ import { api } from "@/lib/axios";
 import { volunteerAPI } from "@/lib/api";
 import { toast } from "sonner";
 
+
+
 // For the logged-in volunteer to get their own rating (Corrected endpoint)
 export const useMyVolunteerRating = () => {
     return useQuery({
@@ -24,7 +26,7 @@ export const useAllVolunteers = () => {
 export const useVolunteerDashboard = () => {
     return useQuery({
         queryKey: ["volunteerDashboard"],
-        queryFn: () => volunteerAPI.getDashboard().then(res => res.data), // FIX: unwrap data
+        queryFn: () => volunteerAPI.getDashboard().then(res => res.data),
     });
 };
 
@@ -40,7 +42,15 @@ export const useVolunteerPerformance = () => {
 export const useModeratedRooms = () => {
     return useQuery({
         queryKey: ["moderatedRooms"],
-        queryFn: () => volunteerAPI.getModeratedRooms().then(res => res.data), // FIX: unwrap data
+        queryFn: () => volunteerAPI.getModeratedRooms().then(res => res.data),
+    });
+};
+
+// Get Volunteer's message history
+export const useVolunteerMessageHistory = (params?: any) => {
+    return useQuery({
+        queryKey: ["volunteerMessageHistory", params],
+        queryFn: () => volunteerAPI.getMessageHistory(params),
     });
 };
 
@@ -48,7 +58,15 @@ export const useModeratedRooms = () => {
 export const useMyVolunteerFeedback = () => {
     return useQuery({
         queryKey: ["myVolunteerFeedback"],
-        queryFn: () => volunteerAPI.getMyFeedback().then(res => res.data), // FIX: unwrap data
+        queryFn: () => volunteerAPI.getMyFeedback().then(res => res.data),
+    });
+};
+
+// Get volunteer availability status
+export const useVolunteerAvailabilityStatus = () => {
+    return useQuery({
+        queryKey: ["volunteerAvailability"],
+        queryFn: () => volunteerAPI.getAvailabilityStatus(),
     });
 };
 
@@ -65,4 +83,19 @@ export const useUpdateVolunteerProfile = () => {
             toast.error(err.response?.data?.message || "Failed to update profile.");
         }
     });
-}
+};
+
+// Update volunteer availability status
+export const useUpdateVolunteerAvailability = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (status: { isActive?: boolean; maxConcurrentChats?: number }) => volunteerAPI.updateAvailabilityStatus(status),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["volunteerAvailability"] });
+            toast.success("Availability updated.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to update availability.");
+        }
+    });
+};

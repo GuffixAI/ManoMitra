@@ -1,4 +1,4 @@
-// hooks/api/useBookings.ts
+// web/hooks/api/useBookings.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { bookingAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -9,6 +9,15 @@ export const useMyBookings = () => {
     queryKey: ["myBookings"],
     queryFn: () => bookingAPI.getMyBookings(),
   });
+};
+
+// For Students: Get a single booking by ID
+export const useBookingById = (id: string) => {
+    return useQuery({
+        queryKey: ['booking', id],
+        queryFn: () => bookingAPI.getBookingById(id),
+        enabled: !!id,
+    });
 };
 
 // For Students: Create a booking
@@ -43,7 +52,6 @@ export const useCancelBooking = () => {
     });
 };
 
-
 // For Counsellors: Get incoming bookings
 export const useIncomingBookings = () => {
   return useQuery({
@@ -69,5 +77,13 @@ export const useUpdateBookingStatus = () => {
         onError: (err: any) => {
             toast.error(err.response?.data?.message || "Failed to update status.");
         }
+    });
+};
+
+// For Admins: Get booking statistics
+export const useAdminBookingStats = () => {
+    return useQuery({
+        queryKey: ['adminBookingStats'],
+        queryFn: () => bookingAPI.getAdminStats(),
     });
 };

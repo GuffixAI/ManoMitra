@@ -1,5 +1,4 @@
 // FILE: web/hooks/api/useReports.ts
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { reportAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -64,5 +63,56 @@ export const useDeleteReport = () => {
         onError: (err: any) => {
             toast.error(err.response?.data?.message || "Failed to delete report.");
         }
+    });
+};
+
+// For Counsellors: Get assigned reports
+export const useAssignedReports = (params?: any) => {
+    return useQuery({
+        queryKey: ['assignedReports', params],
+        queryFn: () => reportAPI.getAssignedReports(params),
+    });
+};
+
+// For Counsellors: Get details of a specific assigned report
+export const useAssignedReportDetails = (id: string) => {
+    return useQuery({
+        queryKey: ['assignedReportDetails', id],
+        queryFn: () => reportAPI.getReportDetails(id),
+        enabled: !!id,
+    });
+};
+
+// For Counsellors: Update the status of an assigned report
+export const useUpdateReportStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, status, notes }: { id: string, status: string, notes?: string }) =>
+            reportAPI.updateReportStatus(id, status, notes),
+        onSuccess: (_, { id }) => {
+            queryClient.invalidateQueries({ queryKey: ['assignedReports'] });
+            queryClient.invalidateQueries({ queryKey: ['assignedReportDetails', id] });
+            toast.success("Report status updated.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to update report status.");
+        }
+    });
+};
+
+// For Counsellors & Admins: Get urgent reports
+export const useUrgentReports = () => {
+    return useQuery({
+        queryKey: ['urgentReports'],
+        queryFn: () => reportAPI.getUrgentReports(),
+    });
+};
+
+// For Counsellors & Admins: Get reports by status
+export const useReportsByStatus = (status: string) => {
+    return useQuery({
+        queryKey: ['reportsByStatus', status],
+        queryFn: () => reportAPI.getReportsByStatus(status),
+        enabled: !!status,
     });
 };

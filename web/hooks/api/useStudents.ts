@@ -1,4 +1,3 @@
-
 // FILE: web/hooks/api/useStudents.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentAPI } from "@/lib/api";
@@ -8,7 +7,7 @@ import { toast } from "sonner";
 export const useStudentProfile = () => {
   return useQuery({
     queryKey: ["studentProfile"],
-    queryFn: () => studentAPI.getProfile().then(res => res.data), // FIX: Unwrap data
+    queryFn: () => studentAPI.getProfile().then(res => res.data),
   });
 };
 
@@ -31,7 +30,6 @@ export const useUpdateStudentProfile = () => {
 export const useAvailableCounsellors = (params?: any) => {
     return useQuery({
         queryKey: ['availableCounsellors', params],
-        // FIX: Return the full response so pagination can be used later
         queryFn: () => studentAPI.getAvailableCounsellors(params),
     });
 };
@@ -40,8 +38,15 @@ export const useAvailableCounsellors = (params?: any) => {
 export const useAvailableVolunteers = (params?: any) => {
     return useQuery({
         queryKey: ['availableVolunteers', params],
-        // FIX: Return the full response
         queryFn: () => studentAPI.getAvailableVolunteers(params),
+    });
+};
+
+// Get student's connections
+export const useStudentConnections = () => {
+    return useQuery({
+        queryKey: ['studentConnections'],
+        queryFn: () => studentAPI.getConnections(),
     });
 };
 
@@ -60,6 +65,7 @@ export const useConnectCounsellor = () => {
     });
 };
 
+// Disconnect from a counsellor
 export const useDisconnectCounsellor = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -70,6 +76,51 @@ export const useDisconnectCounsellor = () => {
         },
         onError: (err: any) => {
             toast.error(err.response?.data?.message || "Failed to disconnect.");
+        }
+    });
+};
+
+// Connect with a volunteer
+export const useConnectVolunteer = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (volunteerId: string) => studentAPI.connectVolunteer(volunteerId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['studentConnections'] });
+            toast.success("Successfully connected with volunteer!");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to connect.");
+        }
+    });
+};
+
+// Disconnect from a volunteer
+export const useDisconnectVolunteer = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (volunteerId: string) => studentAPI.disconnectVolunteer(volunteerId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['studentConnections'] });
+            toast.success("Successfully disconnected from volunteer.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to disconnect.");
+        }
+    });
+};
+
+// Update student preferences
+export const useUpdateStudentPreferences = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (preferences: any) => studentAPI.updatePreferences(preferences),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["studentProfile"] });
+            toast.success("Preferences updated.");
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to update preferences.");
         }
     });
 };
