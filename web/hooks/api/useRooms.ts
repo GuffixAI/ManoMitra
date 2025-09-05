@@ -2,12 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import { toast } from "sonner";
-import { roomAPI } from "@/lib/api"; // Corrected import
+import { roomAPI } from "@/lib/api";
 
 export const useCreateRoom = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (newRoom: { topic: string, description?: string }) => api.post('/rooms', newRoom),
+        mutationFn: (newRoom: { topic: string, description?: string }) => roomAPI.createRoom(newRoom),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['rooms'] });
             toast.success("Room created successfully!");

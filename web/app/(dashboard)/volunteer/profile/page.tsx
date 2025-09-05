@@ -1,8 +1,8 @@
 // web/app/(dashboard)/volunteer/profile/page.tsx
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { volunteerAPI } from "@/lib/api";
-import { useUpdateVolunteerProfile } from "@/hooks/api/useVolunteers";
+// import { useQuery } from "@tanstack/react-query";
+// import { volunteerAPI } from "@/lib/api";
+import { useUpdateVolunteerProfile, useVolunteerProfile } from "@/hooks/api/useVolunteers";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { Spinner } from "@/components/ui/spinner";
 import React from "react";
-import { Volunteer } from "@/types/auth";
+// import { Volunteer } from "@/types/auth";
 
 export default function VolunteerProfilePage() {
-    const { data: profile, isLoading } = useQuery<Volunteer>({
-        queryKey: ["volunteerProfile"],
-        queryFn: () => volunteerAPI.getProfile(),
-    });
+    // const { data: profile, isLoading } = useQuery<Volunteer>({
+    //     queryKey: ["volunteerProfile"],
+    //     queryFn: () => volunteerAPI.getProfile(),
+    // });
+
+    const { data: profile, isLoading } = useVolunteerProfile();
+
+
+
     const updateProfileMutation = useUpdateVolunteerProfile();
 
     const { register, handleSubmit, setValue } = useForm();
@@ -25,8 +30,7 @@ export default function VolunteerProfilePage() {
     React.useEffect(() => {
         if (profile) {
             setValue("name", profile.name);
-            setValue("description", profile.description || ""); // Handle optional property
-            // Convert arrays to comma-separated strings for the input fields
+            setValue("description", profile.description || "");
             setValue("skills", Array.isArray(profile.skills) ? profile.skills.join(", ") : "");
             setValue("interests", Array.isArray(profile.interests) ? profile.interests.join(", ") : "");
         }

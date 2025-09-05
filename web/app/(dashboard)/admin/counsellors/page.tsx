@@ -1,15 +1,18 @@
 // app/(dashboard)/admin/counsellors/page.tsx
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/axios";
+// import { useQuery } from "@tanstack/react-query";
+// import { api } from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAllCounsellors } from "@/hooks/api/useAdmin";
 
 export default function AdminCounsellorsPage() {
-    const { data: counsellors, isLoading } = useQuery({
-        queryKey: ["allCounsellors"],
-        queryFn: () => api.get("/admin/counsellors").then(res => res.data.data),
-    });
+    // const { data: counsellors, isLoading } = useQuery({
+    //     queryKey: ["allCounsellors"],
+    //     queryFn: () => api.get("/admin/counsellors").then(res => res.data.data),
+    // });
+
+    const { data: counsellors, isLoading } = useAllCounsellors();
 
     return (
         <div className="space-y-6">
