@@ -49,7 +49,15 @@ export const authAPI = {
   getSocketToken: async (): Promise<{ success: boolean; socketToken: string; }> => {
     const response = await api.post('/auth/socket-token');
     return response.data;
-  }
+  },
+   forgotPassword: async (email: string): Promise<{ success: boolean; message: string; }> => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+  resetPassword: async (token: string, password: string): Promise<{ success: boolean; message: string; }> => {
+    const response = await api.patch(`/auth/reset-password/${token}`, { password });
+    return response.data;
+  },
 };
 
 // Student API
