@@ -5,6 +5,7 @@ import Student from "../models/student.model.js";
 import Counsellor from "../models/counsellor.model.js";
 import Notification from "../models/notification.model.js";
 import Admin from "../models/admin.model.js";
+import { ROLES } from "../constants/roles.js";
 
 // Student: Create a new report
 export const createReport = async (req, res) => {
@@ -265,6 +266,7 @@ export const updateReportStatus = async (req, res) => {
           recipient: report.owner,
           recipientModel: 'Student',
           type: 'report_resolved',
+          category: 'report', // BUG FIX: Added required category field
           title: 'Your Report has been Resolved',
           message: `Your report titled "${report.title}" has been resolved by your counsellor.`,
           data: { reportId: report._id, counsellorId: req.user.id }
@@ -301,8 +303,11 @@ export const getReportDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: "Report not found" });
     }
 
-    // Check if the counsellor is assigned to this report
-    if (report.assignedTo?.toString() !== req.user.id) {
+    // FIX: Allow access if the user is the assigned counsellor OR an admin.
+    const isAssignedCounsellor = report.assignedTo?.toString() === req.user.id;
+    const isAdmin = req.user.role === ROLES.ADMIN;
+
+    if (!isAssignedCounsellor && !isAdmin) {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 

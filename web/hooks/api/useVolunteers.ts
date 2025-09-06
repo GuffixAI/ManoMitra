@@ -26,8 +26,6 @@ export const useAllVolunteers = () => {
 export const useVolunteerDashboard = () => {
     return useQuery({
         queryKey: ["volunteerDashboard"],
-        // FIX: Removed the incorrect .then() chain.
-        // The API wrapper `volunteerAPI.getDashboard()` already returns the correct data.
         queryFn: () => volunteerAPI.getDashboard(),
     });
 };
@@ -44,7 +42,9 @@ export const useVolunteerPerformance = () => {
 export const useModeratedRooms = () => {
     return useQuery({
         queryKey: ["moderatedRooms"],
-        queryFn: () => volunteerAPI.getModeratedRooms().then(res => res.data),
+        // FIX: Removed the redundant .then(res => res.data)
+        // The API wrapper already returns the data correctly.
+        queryFn: () => volunteerAPI.getModeratedRooms(),
     });
 };
 

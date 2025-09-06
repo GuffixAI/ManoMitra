@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import Admin from "../models/admin.model.js";
 import { connectDB } from "../db/connectDB.js";
 
-dotenv.config({ path: './server/.env' });
+dotenv.config();
 
 const createSuperAdmin = async () => {
   try {

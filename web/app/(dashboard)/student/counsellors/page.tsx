@@ -5,14 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import { UserPlus } from "lucide-react";
+import { UserPlus, CheckCircle } from "lucide-react"; // FIX: Imported CheckCircle
 import { useAvailableCounsellors, useConnectCounsellor } from "@/hooks/api/useStudents";
 
 export default function StudentCounsellorsPage() {
   const { data: counsellorsResponse, isLoading } = useAvailableCounsellors();
   const connectMutation = useConnectCounsellor();
 
-  // Track connected counsellors locally (optimistic update)
+  // FIX: Track connected counsellors locally for optimistic UI update
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
 
   const handleConnect = (counsellorId: string) => {
@@ -59,15 +59,20 @@ export default function StudentCounsellorsPage() {
               <p className="text-sm text-muted-foreground line-clamp-3 h-[60px]">
                 {counsellor.description}
               </p>
+              {/* FIX: Improved button state and feedback */}
               <Button
                 className="w-full cursor-pointer"
                 onClick={() => handleConnect(counsellor._id)}
                 disabled={
-                  connectMutation.isPending || connectedIds.includes(counsellor._id)
+                  connectMutation.isPending && connectMutation.variables === counsellor._id || 
+                  connectedIds.includes(counsellor._id)
                 }
               >
                 {connectedIds.includes(counsellor._id) ? (
-                  "Connected"
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Connected
+                  </>
                 ) : (
                   <>
                     <UserPlus className="mr-2 h-4 w-4" />
