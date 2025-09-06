@@ -5,9 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, Calendar, AlertTriangle, ArrowRight } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
+import { useAdminBookingStats } from "@/hooks/api/useBookings";
+
 
 export default function AdminDashboardPage() {
     const { data, isLoading } = useAdminDashboardStats();
+    const { data: bookingStats, isLoading: isLoadingBookings } = useAdminBookingStats();
+
+    if (isLoading || isLoadingBookings) { // Check both loading states
+        return <div className="flex justify-center items-center h-full"><Spinner /></div>;
+    }
 
     const StatCard = ({ title, value, icon: Icon, link, linkText }: any) => (
         <Card>
@@ -42,9 +49,11 @@ export default function AdminDashboardPage() {
                 <StatCard title="Total Reports" value={stats?.reports.total} icon={FileText} link="/admin/reports" linkText="Manage Reports" />
                 <StatCard title="Pending Reports" value={stats?.reports.pending} icon={FileText} />
                 <StatCard title="Urgent Reports" value={stats?.reports.urgent} icon={AlertTriangle} />
-                <StatCard title="Total Bookings" value={stats?.bookings} icon={Calendar} />
+                {/* <StatCard title="Total Bookings" value={stats?.bookings} icon={Calendar} /> */}
+                <StatCard title="Total Bookings" value={bookingStats?.total} icon={Calendar} />
             </div>
              {/* Further components for recent activity etc. can be added */}
+             
         </div>
     );
 }

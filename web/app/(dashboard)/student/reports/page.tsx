@@ -1,13 +1,13 @@
-// FILE: web/app/(dashboard)/student/reports/page.tsx
-
+// web/app/(dashboard)/student/reports/page.tsx
 "use client";
-import { useMyReports, useDeleteReport } from "@/hooks/api/useReports";
+import { useState, useEffect } from "react";
+import { useMyReports, useDeleteReport, useUpdateReport } from "@/hooks/api/useReports";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import dayjs from "dayjs";
-import { Eye, PlusCircle, Trash2 } from "lucide-react";
+import { Eye, PlusCircle, Trash2, Edit, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,26 +20,40 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/ui/spinner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useState } from "react";
-import ReactMarkdown from 'react-markdown';
-import { reportAPI } from "@/lib/api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export default function StudentReportsPage() {
     const { data: reportsResponse, isLoading } = useMyReports();
     const deleteReportMutation = useDeleteReport();
-    const [previewContent, setPreviewContent] = useState("");
-    const [previewTitle, setPreviewTitle] = useState("");
+    const updateReportMutation = useUpdateReport();
 
-    const handleView = async (reportId: string) => {
-        try {
-            const report = await reportAPI.getReportById(reportId);
-            setPreviewContent(report.content);
-            setPreviewTitle(report.title);
-        } catch (error) {
-            setPreviewContent("Failed to load content.");
-            setPreviewTitle("Error");
+    const [isEditOpen, setEditOpen] = useState(false);
+    const [editingReport, setEditingReport] = useState<any>(null);
+
+    const { register, handleSubmit, setValue, formState: { errors } } = useForm();
+    
+    // Pre-fill the edit form when a report is selected
+    useEffect(() => {
+        if (editingReport) {
+            setValue("title", editingReport.title);
+            setValue("content", editingReport.content);
         }
+    }, [editingReport, setValue]);
+    
+    const handleUpdateReport = (data: any) => {
+        if (!editingReport) return;
+        updateReportMutation.mutate({ id: editingReport._id, data }, {
+            onSuccess: () => {
+                toast.success("Report updated successfully.");
+                setEditOpen(false);
+                setEditingReport(null);
+            }
+        });
     };
 
     const reports = reportsResponse?.data || [];
@@ -49,7 +63,7 @@ export default function StudentReportsPage() {
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold">My Reports</h1>
                 <Link href="/student/create-report">
-                    <Button className="cursor-pointer"><PlusCircle className="mr-2 h-4 w-4"/> New Report</Button>
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/> New Report</Button>
                 </Link>
             </div>
             <Table>
@@ -57,7 +71,6 @@ export default function StudentReportsPage() {
                     <TableRow>
                         <TableHead>Title</TableHead>
                         <TableHead>Category</TableHead>
-                        <TableHead>Priority</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -65,31 +78,29 @@ export default function StudentReportsPage() {
                 </TableHeader>
                 <TableBody>
                     {isLoading ? (
-                        <TableRow><TableCell colSpan={6} className="text-center h-24"><Spinner /></TableCell></TableRow>
+                        <TableRow><TableCell colSpan={5} className="text-center h-24"><Spinner /></TableCell></TableRow>
                     ) : reports.length === 0 ? (
-                        <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No reports found.</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No reports found.</TableCell></TableRow>
                     ) : (
                         reports.map((report: any) => (
                             <TableRow key={report._id}>
                                 <TableCell className="font-medium">{report.title}</TableCell>
                                 <TableCell className="capitalize">{report.category}</TableCell>
-                                <TableCell><Badge variant={report.priority === 'urgent' || report.priority === 'high' ? 'destructive' : 'secondary'}>{report.priority}</Badge></TableCell>
                                 <TableCell><Badge variant="outline">{report.status}</Badge></TableCell>
                                 <TableCell>{dayjs(report.createdAt).format("MMM D, YYYY")}</TableCell>
                                 <TableCell className="flex gap-2 justify-end">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" size="icon" onClick={() => handleView(report._id)}>
-                                                <Eye className="h-4 w-4"/>
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-2xl">
-                                            <DialogHeader><DialogTitle>{previewTitle}</DialogTitle></DialogHeader>
-                                            <div className="prose dark:prose-invert max-h-[60vh] overflow-y-auto border p-4 rounded-md">
-                                                <ReactMarkdown>{previewContent}</ReactMarkdown>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
+                                    {report.status === 'pending' && (
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            onClick={() => {
+                                                setEditingReport(report);
+                                                setEditOpen(true);
+                                            }}
+                                        >
+                                            <Edit className="h-4 w-4"/>
+                                        </Button>
+                                    )}
                                     {report.status === 'pending' && (
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -115,6 +126,35 @@ export default function StudentReportsPage() {
                     )}
                 </TableBody>
             </Table>
+
+            {/* Edit Report Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Report</DialogTitle>
+                        <DialogDescription>You can only edit reports that are still pending.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit(handleUpdateReport)} className="space-y-4 py-4">
+                         <div>
+                            <Label htmlFor="title">Title</Label>
+                            <Input id="title" {...register("title", { required: "Title is required" })} />
+                             {errors.title && <p className="text-sm text-destructive mt-1">{`${errors.title.message}`}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="content">Content</Label>
+                            <Textarea id="content" {...register("content", { required: "Content is required" })} rows={10} />
+                             {errors.content && <p className="text-sm text-destructive mt-1">{`${errors.content.message}`}</p>}
+                        </div>
+                        <div className="flex justify-end gap-2">
+                             <Button type="button" variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+                             <Button type="submit" disabled={updateReportMutation.isPending}>
+                                {updateReportMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </div>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

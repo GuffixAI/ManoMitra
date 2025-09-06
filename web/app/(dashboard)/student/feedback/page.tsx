@@ -43,6 +43,9 @@ export default function StudentFeedbackPage() {
         ...volunteers.map((v: any) => ({ ...v, type: 'volunteer' }))
     ];
 
+    console.log(feedbackTargets)
+    console.log(myFeedback)
+
     const onSubmit = (data: any) => {
         if (rating === 0) {
             alert("Please provide a rating.");
