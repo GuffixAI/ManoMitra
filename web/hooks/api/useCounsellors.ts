@@ -92,12 +92,6 @@ export const useUpdateAvailability = () => {
     });
 }
 
-
-// onSuccess: () => {
-//     queryClient.invalidateQueries({ queryKey: ['counsellorProfile'] });
-//     toast.success("Availability updated!");
-// },
-
 export const useCounsellorProfile = () => {
     return useQuery({
         queryKey: ["counsellorProfile"],

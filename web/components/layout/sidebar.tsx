@@ -1,4 +1,4 @@
-// Comprehensive sidebar navigation component
+// FILE: web/components/layout/sidebar.tsx
 "use client";
 import { useState } from "react";
 import Link from "next/link";

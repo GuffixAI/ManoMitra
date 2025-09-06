@@ -7,7 +7,64 @@ import Report from "../models/report.model.js";
 import Booking from "../models/booking.model.js";
 import { ROLES } from "../constants/roles.js";
 
-// ADDED: Get admin profile controller
+// ADDED: A new controller function to create an admin.
+// WARNING: This is for development purposes. Exposing admin creation via API is a security risk.
+export const createAdmin = async (req, res) => {
+  try {
+    // Default admin details to be used if the request body is empty
+    const defaultAdmin = {
+      name: "Default Admin",
+      email: `superadmin@gmail.com`,
+      password: "Admin@00&!",
+    };
+
+    // Use details from request body, or fall back to defaults
+    const { 
+      name = defaultAdmin.name, 
+      email = defaultAdmin.email, 
+      password = defaultAdmin.password 
+    } = req.body;
+
+    // Check if an admin with this email already exists
+    const existingAdmin = await Admin.findOne({ email });
+    if (existingAdmin) {
+      return res.status(409).json({ success: false, message: "An admin with this email already exists." });
+    }
+
+    // Create the new admin with full super admin permissions
+    const newAdmin = await Admin.create({
+      name,
+      email,
+      password, // The password will be hashed by the pre-save hook in the model
+      isSuperAdmin: true,
+      permissions: [
+        "manage_users",
+        "manage_counsellors",
+        "manage_volunteers",
+        "manage_reports",
+        "view_analytics",
+        "system_settings",
+        "emergency_access",
+      ],
+      isActive: true,
+    });
+
+    // Exclude password from the response
+    const adminResponse = newAdmin.toObject();
+    delete adminResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: "Admin user created successfully.",
+      data: adminResponse,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// Get admin profile controller
 export const getProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.user.id).select('-password');
@@ -20,7 +77,7 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// ADDED: Update admin profile controller
+// Update admin profile controller
 export const updateProfile = async (req, res) => {
   try {
     const { name, contactNumber } = req.body;
@@ -43,13 +100,6 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-
-// **REMOVED for security.** This should be a one-time script, not an API endpoint.
-// A setup script would connect to the DB and create the first admin user securely.
-/*
-export const createSuperAdmin = async (req, res) => { ... };
-*/
 
 
 // Get admin dashboard statistics

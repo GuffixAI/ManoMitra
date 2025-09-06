@@ -1,3 +1,4 @@
+// FILE: server/middlewares/auth.middleware.js
 import jwt from "jsonwebtoken";
 import Student from "../models/student.model.js";
 import Counsellor from "../models/counsellor.model.js";

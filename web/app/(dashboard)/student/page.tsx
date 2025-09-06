@@ -1,10 +1,8 @@
+// FILE: web/app/(dashboard)/student/page.tsx
 "use client";
 import { useAuthStore } from "@/store/auth.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
-import { studentAPI } from "@/lib/api";
 import { 
   Calendar, 
   MessageSquare, 
@@ -18,20 +16,12 @@ import {
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Spinner } from "@/components/ui/spinner";
-import dayjs from "dayjs";
 import { useStudentDashboard } from "@/hooks/api/useStudents"; 
 
 export default function StudentDashboardPage() {
   const user = useAuthStore((s) => s.user);
 
   const { data: dashboardData, isLoading } = useStudentDashboard();
-
-  // // Fetch dashboard data
-  // const { data: dashboardData, isLoading } = useQuery({
-  //   queryKey: ['student-dashboard'],
-  //   queryFn: () => studentAPI.getDashboard(), // This now returns the correct data shape
-  //   enabled: !!user
-  // });
 
   const StatCard = ({ title, value, icon: Icon, link, linkText, colorClass = "text-primary" }: any) => (
     <Card>
