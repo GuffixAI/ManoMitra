@@ -13,23 +13,17 @@ import {
   getSystemAnalytics,
   emergencyAccess,
   getUserById,
-  createCounsellor,
+  createCounsellor ,
   getProfile,
   updateProfile,
-  createAdmin, 
 } from "../controllers/admin.controller.js";
 import { ROLES } from "../constants/roles.js";
 
 const router = express.Router();
-router.post("/users/create-admin", createAdmin);
 
-// All subsequent routes require admin role
 router.use(protect, requireRole([ROLES.ADMIN]));
 
-// ADDED: Endpoint to create a new admin.
-// This is protected and can only be accessed by an existing admin.
-
-// Admin's own profile routes
+// ADDED: Admin's own profile routes
 router.get("/profile", getProfile);
 router.put("/profile", updateProfile);
 
