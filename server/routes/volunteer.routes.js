@@ -1,3 +1,4 @@
+// FILE: server/routes/volunteer.routes.js
 import express from "express";
 import { protect } from "../middlewares/auth.middleware.js";
 import { requireRole } from "../middlewares/role.middleware.js";
@@ -13,7 +14,8 @@ import {
   completeTraining,
   getMyFeedback,
   getAvailabilityStatus,
-  updateAvailabilityStatus
+  updateAvailabilityStatus,
+  getConnectedStudents, // 1. Import the new function
 } from "../controllers/volunteer.controller.js";
 
 const router = express.Router();
@@ -28,6 +30,9 @@ router.put("/profile", updateProfile);
 // Dashboard and analytics
 router.get("/dashboard", getDashboardData);
 router.get("/performance", getPerformanceMetrics);
+
+// ** 2. Add the new route here **
+router.get("/students", getConnectedStudents);
 
 // Room management
 router.get("/rooms", getModeratedRooms);

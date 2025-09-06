@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { UserPlus, CheckCircle, Star, XCircle } from "lucide-react";
 import { useAvailableCounsellors, useConnectCounsellor, useStudentConnections, useDisconnectCounsellor } from "@/hooks/api/useStudents";
+import Link from "next/link";
 
 export default function StudentCounsellorsPage() {
   const { data: counsellorsResponse, isLoading: isLoadingCounsellors } = useAvailableCounsellors();
@@ -104,6 +105,12 @@ export default function StudentCounsellorsPage() {
                         <UserPlus className="mr-2 h-4 w-4" /> Connect
                     </Button>
                 )}
+
+                {isConnected && (
+    <Button asChild variant="outline" size="sm">
+        <Link href={`/messages/${counsellor._id}`}>Chat</Link>
+    </Button>
+)}
               </CardContent>
             </Card>
           );

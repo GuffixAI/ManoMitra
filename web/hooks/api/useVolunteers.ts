@@ -141,3 +141,11 @@ export const useUpdateVolunteerActivity = () => {
     },
   });
 }
+
+
+export const useVolunteerConnectedStudents = (params?: any) => {
+    return useQuery({
+        queryKey: ["volunteerConnectedStudents", params],
+        queryFn: () => volunteerAPI.getConnectedStudents(params),
+    });
+};

@@ -95,6 +95,12 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           {
+    title: "Messages",
+    href: "/messages", 
+    icon: MessageSquare,
+    badge: null,
+},
+          {
             title: "Peer Support",
             href: "/student/chat",
             icon: MessageSquare,
@@ -136,6 +142,12 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           {
+    title: "Messages",
+    href: "/messages",
+    icon: MessageSquare,
+    badge: null,
+},
+          {
             title: "Performance",
             href: "/counsellor/performance",
             icon: BarChart3,
@@ -176,6 +188,13 @@ export function Sidebar({ className }: SidebarProps) {
             icon: BookOpen,
             badge: null,
           },
+          {
+            title: "Students",
+            href: "/volunteer/students",
+            icon: Users,
+            badge: null,
+          },
+
           {
             title: "Notifications",
             href: "/volunteer/notifications",

@@ -104,6 +104,7 @@ export const volunteerAPI = {
   getMyFeedback: async () => api.get('/volunteers/feedback').then(getData),
   getAvailabilityStatus: async () => api.get('/volunteers/availability').then(getData),
   updateAvailabilityStatus: async (status: any) => api.put('/volunteers/availability', status).then(res => res.data),
+  getConnectedStudents: async (params?: any) => api.get('/volunteers/students', { params }).then(res => res.data),
 };
 
 // Admin API
@@ -201,4 +202,10 @@ export const roomAPI = {
     api.post('/rooms', data).then(res => res.data),
   updateRoomDescription: async (topic: string, description: string) => 
     api.put(`/rooms/${topic}/description`, { description }).then(res => res.data),
+};
+
+
+export const conversationAPI = {
+  getMyConversations: async () => api.get('/conversations').then(getData),
+  getMessagesWithUser: async (userId: string) => api.get(`/conversations/with/${userId}`).then(getData),
 };

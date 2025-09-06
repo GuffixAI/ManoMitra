@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus, XCircle, Star } from "lucide-react";
 import { useAvailableVolunteers, useConnectVolunteer, useDisconnectVolunteer, useStudentConnections } from "@/hooks/api/useStudents";
+import Link from "next/link";
 
 export default function StudentVolunteersPage() {
   const { data: volunteersResponse, isLoading: isLoadingVolunteers } = useAvailableVolunteers();
@@ -89,6 +90,8 @@ export default function StudentVolunteersPage() {
                     >
                         <XCircle className="mr-2 h-4 w-4" /> Disconnect
                     </Button>
+
+
                 ) : (
                     <Button 
                         className="w-full" 
@@ -98,6 +101,14 @@ export default function StudentVolunteersPage() {
                         <UserPlus className="mr-2 h-4 w-4" /> Connect
                     </Button>
                 )}
+
+                
+{isConnected && (
+    <Button asChild variant="outline" size="sm">
+        <Link href={`/messages/${volunteer._id}`}>Chat</Link>
+    </Button>
+)}
+                
               </CardContent>
             </Card>
           )

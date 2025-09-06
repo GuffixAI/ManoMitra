@@ -326,3 +326,36 @@ export const updateAvailabilityStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+export const getConnectedStudents = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search } = req.query;
+
+    const query = { volunteerConnected: req.user.id };
+    if (search) {
+      query.name = { $regex: search, $options: 'i' };
+    }
+
+    const students = await Student.find(query)
+      .select('name email studentCode profileImage')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ name: 1 });
+
+    const total = await Student.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: students,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

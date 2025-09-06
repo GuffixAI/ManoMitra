@@ -30,8 +30,10 @@ export const createFeedback = async (req, res) => {
       });
     }
 
+    // CORRECTED: Capitalize the targetType to match the model name for refPath population.
+    const modelName = targetType.charAt(0).toUpperCase() + targetType.slice(1);
     let target;
-    if (targetType === "counsellor") {
+    if (modelName === "Counsellor") {
       target = await Counsellor.findById(targetId);
     } else {
       target = await Volunteer.findById(targetId);
@@ -40,7 +42,7 @@ export const createFeedback = async (req, res) => {
     if (!target) {
       return res.status(404).json({ 
         success: false, 
-        message: `${targetType} not found` 
+        message: `${modelName} not found` 
       });
     }
 
@@ -59,15 +61,15 @@ export const createFeedback = async (req, res) => {
 
     // Create feedback
     const feedback = await Feedback.create({
-      rater: req.user.id, // FIX: Save the student's ID here
-      targetType,
+      rater: req.user.id,
+      targetType: modelName, // Use the capitalized model name
       target: targetId,
       raterHash: feedbackHash,
       rating,
       comment: comment || ""
     });
 
-    if (targetType === "counsellor") {
+    if (modelName === "Counsellor") {
       await Counsellor.findByIdAndUpdate(targetId, {
         $push: { 
           feedback: {
@@ -111,8 +113,11 @@ export const getFeedback = async (req, res) => {
       });
     }
 
+    // CORRECTED: Capitalize the targetType to match the model name for querying.
+    const modelName = targetType.charAt(0).toUpperCase() + targetType.slice(1);
+
     const feedback = await Feedback.find({ 
-      targetType, 
+      targetType: modelName, 
       target: targetId 
     }).sort({ createdAt: -1 });
 
@@ -148,12 +153,9 @@ export const getFeedback = async (req, res) => {
 // Get my feedback (for students)
 export const getMyFeedback = async (req, res) => {
   try {
-    // FIX: Use the new 'rater' field for a correct and efficient search
     const feedback = await Feedback.find({ rater: req.user.id }) 
     .populate('target', 'name')
     .sort({ createdAt: -1 });
-
-    console.log(feedback)
 
     res.status(200).json({
       success: true,
@@ -192,7 +194,7 @@ export const updateFeedback = async (req, res) => {
 
     await feedback.save();
 
-    if (feedback.targetType === "counsellor") {
+    if (feedback.targetType === "Counsellor") {
       await Counsellor.findByIdAndUpdate(feedback.target, {
         $set: { 
           "feedback.$[elem].rating": feedback.rating,
@@ -236,7 +238,7 @@ export const deleteFeedback = async (req, res) => {
       return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    if (feedback.targetType === "counsellor") {
+    if (feedback.targetType === "Counsellor") {
       await Counsellor.findByIdAndUpdate(feedback.target, {
         $pull: { feedback: { student: req.user.id } }
       });
@@ -316,7 +318,7 @@ export const getTopRated = async (req, res) => {
     
     let query = {};
     if (type && ["counsellor", "volunteer"].includes(type)) {
-      query.targetType = type;
+      query.targetType = type.charAt(0).toUpperCase() + type.slice(1);
     }
 
     const topRated = await Feedback.aggregate([
@@ -337,7 +339,7 @@ export const getTopRated = async (req, res) => {
     const populatedResults = await Promise.all(
       topRated.map(async (item) => {
         let target;
-        if (item.targetType === "counsellor") {
+        if (item.targetType === "Counsellor") {
           target = await Counsellor.findById(item._id).select('name specialization');
         } else {
           target = await Volunteer.findById(item._id).select('name availability');

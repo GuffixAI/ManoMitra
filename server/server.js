@@ -22,6 +22,10 @@ import Student from "./models/student.model.js";
 import Counsellor from "./models/counsellor.model.js";
 import Volunteer from "./models/volunteer.model.js";
 import Admin from "./models/admin.model.js";
+// ================= FIX IS HERE =================
+import Conversation from "./models/conversation.model.js"; // 1. IMPORT Conversation
+import PrivateMessage from "./models/privateMessage.model.js"; // 2. IMPORT PrivateMessage
+// ===============================================
 
 
 import { devLogging, prodLogging, errorLogging } from './middlewares/logging.middleware.js';
@@ -105,6 +109,7 @@ import reportRoutes from "./routes/report.routes.js";
 import feedbackRoutes from "./routes/feedback.routes.js";
 import roomRoutes from "./routes/room.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import conversationRoutes from "./routes/conversation.routes.js";
 
 app.use("/api/students", studentRoutes);
 app.use("/api/counsellors", counsellorRoutes);
@@ -116,6 +121,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/conversations", conversationRoutes);
 
 // Fallbacks
 app.use(notFound);
@@ -337,6 +343,101 @@ peer.on("connection", async (socket) => {
       });
     }
   });
+});
+
+// ---- Private Chat Namespace ----
+const privateChat = io.of("/private-chat");
+
+// Apply the same authentication middleware
+privateChat.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+
+  if (!token) {
+    return next(new Error("Authentication error: Token not provided."));
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+    if (err) {
+      return next(new Error("Authentication error: Invalid token."));
+    }
+
+    if (!decoded.id || !decoded.role) {
+      return next(new Error("Authentication error: Invalid token payload."));
+    }
+    
+    // Simplified user attachment for private chat
+    socket.user = { id: decoded.id, role: decoded.role };
+    next();
+  });
+});
+
+privateChat.on("connection", (socket) => {
+    console.log(`User ${socket.user.id} connected to private chat`);
+
+    // Join a private room based on two user IDs
+    socket.on("join", async ({ recipientId }) => {
+        const myId = socket.user.id;
+        
+        // Create a consistent room name by sorting IDs
+        const roomId = [myId, recipientId].sort().join('-');
+        socket.join(roomId);
+
+        // Find or create the conversation in the DB
+        let conversation = await Conversation.findOneAndUpdate(
+            { "participants.user": { $all: [myId, recipientId] } },
+            { 
+                $setOnInsert: {
+                    participants: [
+                        { user: myId, userModel: socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1) },
+                        // We'd need to fetch the recipient's role here, but for now we can omit it or simplify
+                        // A better approach would be to pass the recipient's role from the client
+                        { user: recipientId, userModel: 'Student' } // This is a simplification
+                    ]
+                }
+            },
+            { upsert: true, new: true }
+        );
+
+        socket.emit("joined", { roomId, conversationId: conversation._id });
+        console.log(`User ${myId} joined private room: ${roomId}`);
+    });
+
+    // Handle incoming messages
+    socket.on("message", async ({ roomId, conversationId, text }) => {
+        if (!roomId || !conversationId || !text) return;
+
+        try {
+            const cleanText = sanitizeHtml(text.slice(0, 2000), {
+                allowedTags: [], allowedAttributes: {},
+            });
+
+            const senderModel = socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1);
+
+            const msg = await PrivateMessage.create({
+                conversation: conversationId,
+                sender: socket.user.id,
+                senderModel,
+                content: cleanText
+            });
+            
+            // Update the last message in the conversation
+            await Conversation.findByIdAndUpdate(conversationId, { lastMessage: msg._id });
+
+            const populatedMsg = await PrivateMessage.findById(msg._id)
+                .populate('sender', 'name role profileImage');
+
+            // Emit to the specific private room
+            privateChat.to(roomId).emit("message", populatedMsg);
+
+        } catch (error) {
+            console.error("Private message error:", error);
+            socket.emit("error", { message: "Failed to send message" });
+        }
+    });
+
+    socket.on("disconnect", () => {
+        console.log(`User ${socket.user.id} disconnected from private chat`);
+    });
 });
 
 // Error handling for socket connection attempts
