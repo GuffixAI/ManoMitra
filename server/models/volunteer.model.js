@@ -61,15 +61,19 @@ volunteerSchema.index({ lastActive: -1 });
 
 // Virtual for average rating
 volunteerSchema.virtual("averageRating").get(function () {
-  if (this.feedback.length === 0) return 0;
+  // FIX: Added a check to ensure 'this.feedback' exists before reducing it.
+  if (!this.feedback || this.feedback.length === 0) return 0;
   const total = this.feedback.reduce((sum, f) => sum + f.rating, 0);
   return (total / this.feedback.length).toFixed(1);
 });
 
 // Virtual for total feedback count
 volunteerSchema.virtual("feedbackCount").get(function () {
+  // FIX: Added a check to ensure 'this.feedback' exists before accessing its length.
+  if (!this.feedback) return 0;
   return this.feedback.length;
 });
+
 
 // Virtual for total experience in years
 volunteerSchema.virtual("experienceYears").get(function () {
