@@ -22,10 +22,8 @@ import Student from "./models/student.model.js";
 import Counsellor from "./models/counsellor.model.js";
 import Volunteer from "./models/volunteer.model.js";
 import Admin from "./models/admin.model.js";
-// ================= FIX IS HERE =================
-import Conversation from "./models/conversation.model.js"; // 1. IMPORT Conversation
-import PrivateMessage from "./models/privateMessage.model.js"; // 2. IMPORT PrivateMessage
-// ===============================================
+import Conversation from "./models/conversation.model.js";
+import PrivateMessage from "./models/privateMessage.model.js";
 
 
 import { devLogging, prodLogging, errorLogging } from './middlewares/logging.middleware.js';
@@ -371,35 +369,47 @@ privateChat.use((socket, next) => {
   });
 });
 
+// =================================================================
+// START OF THE FIX
+// =================================================================
 privateChat.on("connection", (socket) => {
     console.log(`User ${socket.user.id} connected to private chat`);
 
     // Join a private room based on two user IDs
     socket.on("join", async ({ recipientId }) => {
-        const myId = socket.user.id;
-        
-        // Create a consistent room name by sorting IDs
-        const roomId = [myId, recipientId].sort().join('-');
-        socket.join(roomId);
+        try {
+            const myId = socket.user.id;
+            
+            // Create a consistent room name by sorting IDs
+            const roomId = [myId, recipientId].sort().join('-');
+            socket.join(roomId);
 
-        // Find or create the conversation in the DB
-        let conversation = await Conversation.findOneAndUpdate(
-            { "participants.user": { $all: [myId, recipientId] } },
-            { 
-                $setOnInsert: {
+            // Step 1: Find an existing conversation
+            let conversation = await Conversation.findOne({
+                "participants.user": { $all: [myId, recipientId] }
+            });
+
+            // Step 2: If no conversation exists, create a new one
+            if (!conversation) {
+                const myUserModel = socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1);
+                
+                // Note: The recipient's userModel is simplified here. For a robust solution,
+                // the client should send the recipient's role along with their ID.
+                conversation = await Conversation.create({
                     participants: [
-                        { user: myId, userModel: socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1) },
-                        // We'd need to fetch the recipient's role here, but for now we can omit it or simplify
-                        // A better approach would be to pass the recipient's role from the client
+                        { user: myId, userModel: myUserModel },
                         { user: recipientId, userModel: 'Student' } // This is a simplification
                     ]
-                }
-            },
-            { upsert: true, new: true }
-        );
+                });
+            }
 
-        socket.emit("joined", { roomId, conversationId: conversation._id });
-        console.log(`User ${myId} joined private room: ${roomId}`);
+            socket.emit("joined", { roomId, conversationId: conversation._id });
+            console.log(`User ${myId} joined private room: ${roomId}`);
+
+        } catch (error) {
+            console.error("Error in private chat 'join' event:", error);
+            socket.emit("error", { message: "Could not initialize private chat session." });
+        }
     });
 
     // Handle incoming messages
@@ -439,6 +449,9 @@ privateChat.on("connection", (socket) => {
         console.log(`User ${socket.user.id} disconnected from private chat`);
     });
 });
+// =================================================================
+// END OF THE FIX
+// =================================================================
 
 // Error handling for socket connection attempts
 io.on("connection_error", (err) => {

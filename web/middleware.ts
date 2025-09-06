@@ -5,7 +5,6 @@ import type { NextRequest } from 'next/server';
 // These routes are accessible to unauthenticated users.
 const PUBLIC_ROUTES = [
   '/',
-  '/splash',
   '/login',
   '/register',
   '/auth/login',
