@@ -1,7 +1,7 @@
 // web/app/(dashboard)/student/feedback/page.tsx
 "use client";
 import { useForm, Controller } from "react-hook-form";
-import { useAvailableCounsellors, useStudentConnections } from "@/hooks/api/useStudents";
+import { useStudentConnections } from "@/hooks/api/useStudents";
 import { useSubmitFeedback, useMyFeedback, useDeleteFeedback } from "@/hooks/api/useFeedback";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -43,9 +43,6 @@ export default function StudentFeedbackPage() {
         ...volunteers.map((v: any) => ({ ...v, type: 'volunteer' }))
     ];
 
-    console.log(feedbackTargets)
-    console.log(myFeedback)
-
     const onSubmit = (data: any) => {
         if (rating === 0) {
             alert("Please provide a rating.");
@@ -63,6 +60,8 @@ export default function StudentFeedbackPage() {
             }
         );
     };
+
+    console.log(myFeedback)
 
     return (
         <div className="space-y-8 max-w-3xl mx-auto">
@@ -134,7 +133,7 @@ export default function StudentFeedbackPage() {
                             <div key={fb._id} className="border p-4 rounded-md flex justify-between items-start">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <p className="font-semibold">{fb.targetType}</p>
+                                        <p className="font-semibold">{fb.target?.name || 'Unknown Professional'}</p>
                                         <div className="flex items-center">
                                             {[...Array(5)].map((_, i) => (
                                                 <Star key={i} className={`h-4 w-4 ${i < fb.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />

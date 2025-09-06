@@ -178,7 +178,7 @@ export const notificationAPI = {
 
 export const feedbackAPI = {
   submitFeedback: async (data: { targetType: 'counsellor' | 'volunteer'; targetId: string; rating: number; comment?: string }) => api.post('/feedback', data).then(res => res.data),
-  getMyFeedback: async () => api.get('/feedback/my').then(getData),
+  getMyFeedback: async () => api.get('/feedback/my').then(res => res.data.data),
   getFeedbackForTarget: async (targetType: string, targetId: string) => api.get(`/feedback/${targetType}/${targetId}`).then(getData),
   getTopRated: async () => api.get('/feedback/top-rated').then(getData),
   getStats: async () => api.get('/feedback/stats').then(getData), // Admin only

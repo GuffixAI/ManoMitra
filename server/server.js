@@ -29,6 +29,7 @@ import { devLogging, prodLogging, errorLogging } from './middlewares/logging.mid
 
 dotenv.config();
 const app = express();
+app.disable('etag'); // FIX: Disable ETag-based caching
 
 // Security & parsing
 app.use(express.json({ limit: "1mb" }));

@@ -166,9 +166,9 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // This is the new, correct way to handle logic after rehydration.
-useAuthStore.persist.onFinishHydration((state) => {
-  if (state.isAuthenticated && state.user) {
-    console.log("Rehydrated session, starting activity tracking.");
-    state.startActivityTracking();
-  }
-});
+// useAuthStore.persist.onFinishHydration((state) => {
+//   if (state.isAuthenticated && state.user) {
+//     console.log("Rehydrated session, starting activity tracking.");
+//     state.startActivityTracking();
+//   }
+// });
