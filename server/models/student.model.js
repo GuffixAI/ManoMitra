@@ -1,3 +1,5 @@
+// FILE: server/models/student.model.js
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { ROLES } from "../constants/roles.js";
@@ -71,7 +73,10 @@ studentSchema.virtual("age").get(function () {
 
 // Virtual for total connections
 studentSchema.virtual("totalConnections").get(function () {
-  return this.counsellorConnected.length + this.volunteerConnected.length;
+  // FIX: Add checks to prevent error if arrays are undefined
+  const counsellorCount = this.counsellorConnected ? this.counsellorConnected.length : 0;
+  const volunteerCount = this.volunteerConnected ? this.volunteerConnected.length : 0;
+  return counsellorCount + volunteerCount;
 });
 
 // Virtual for active status

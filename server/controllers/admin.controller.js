@@ -45,8 +45,8 @@ export const updateProfile = async (req, res) => {
 };
 
 
-// **REMOVED for security.** This should be a one-time script, not an API endpoint.
-// A setup script would connect to the DB and create the first admin user securely.
+// **REMOVED for security.** The creation of a super admin should be a 
+// one-time script run on the server, not a public API endpoint.
 /*
 export const createSuperAdmin = async (req, res) => { ... };
 */

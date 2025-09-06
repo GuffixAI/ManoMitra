@@ -6,14 +6,11 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { Volunteer } from "@/types/auth";
 
-
-
-
 // For the logged-in volunteer to get their own rating (Corrected endpoint)
 export const useMyVolunteerRating = () => {
     return useQuery({
         queryKey: ['myVolunteerRating'],
-        queryFn: () => volunteerAPI.getDashboard().then(res => ({ rating: res.data.rating, feedbackCount: res.data.feedbackCount })),
+        queryFn: () => volunteerAPI.getDashboard().then(res => ({ rating: res.rating, feedbackCount: res.feedbackCount })),
     });
 };
 
@@ -29,7 +26,9 @@ export const useAllVolunteers = () => {
 export const useVolunteerDashboard = () => {
     return useQuery({
         queryKey: ["volunteerDashboard"],
-        queryFn: () => volunteerAPI.getDashboard().then(res => res.data),
+        // FIX: Removed the incorrect .then() chain.
+        // The API wrapper `volunteerAPI.getDashboard()` already returns the correct data.
+        queryFn: () => volunteerAPI.getDashboard(),
     });
 };
 

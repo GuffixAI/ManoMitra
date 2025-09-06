@@ -8,6 +8,7 @@
     "start": "node server.js",
     "build": "echo 'No build step required'",
     "setup": "node ensure-dirs.js",
+    "setup:admin": "node scripts/createSuperAdmin.js",
     "postinstall": "node ensure-dirs.js"
   },
   "keywords": [],
