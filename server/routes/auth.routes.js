@@ -10,7 +10,9 @@ import {
   registerVolunteer,
   loginAdmin,
   universalLogin,
-  changePassword
+  changePassword,
+  forgotPassword,
+  resetPassword
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -28,6 +30,10 @@ router.post("/admin/login", loginAdmin);
 router.post("/student/register", registerStudent);
 router.post("/counsellor/register", registerCounsellor);
 router.post("/volunteer/register", registerVolunteer);
+
+
+router.post("/forgot-password", forgotPassword);
+router.patch("/reset-password/:token", resetPassword);
 
 // @desc Change password for authenticated user
 router.post("/change-password", protect, changePassword);

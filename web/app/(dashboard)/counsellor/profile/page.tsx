@@ -11,9 +11,14 @@ import { Spinner } from "@/components/ui/spinner";
 import React from "react";
 import { Loader2 } from "lucide-react";
 
+import { UpdateAvailabilityForm } from "@/components/forms/UpdateAvailabilityForm";
+import { useUpdateAvailability } from "@/hooks/api/useCounsellors";
+
 export default function CounsellorProfilePage() {
     const { data: profile, isLoading } = useCounsellorProfile(); // MODIFIED
     const updateProfileMutation = useUpdateCounsellorProfile(); // MODIFIED
+
+    const updateAvailabilityMutation = useUpdateAvailability();
 
     const { register, handleSubmit, setValue, formState: { isDirty } } = useForm();
     
@@ -24,6 +29,11 @@ export default function CounsellorProfilePage() {
             setValue("description", profile.description);
         }
     }, [profile, setValue]);
+
+
+    const handleAvailabilitySubmit = (data: any) => {
+        updateAvailabilityMutation.mutate({ availableTime: data });
+    };
 
     const onSubmit = (data: any) => {
         // MODIFIED: Convert comma-separated string back to array for the API
@@ -69,6 +79,20 @@ export default function CounsellorProfilePage() {
                             Save Changes
                         </Button>
                     </form>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Weekly Availability</CardTitle>
+                    <CardDescription>Set your available time slots for each day.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <UpdateAvailabilityForm
+                        currentAvailability={profile?.availableTime}
+                        onSubmit={handleAvailabilitySubmit}
+                        isLoading={updateAvailabilityMutation.isPending}
+                    />
                 </CardContent>
             </Card>
         </div>

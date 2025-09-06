@@ -5,6 +5,7 @@ import Counsellor from "../models/counsellor.model.js";
 import Volunteer from "../models/volunteer.model.js";
 import Admin from "../models/admin.model.js";
 import { ROLES } from "../constants/roles.js";
+import crypto from "crypto";
 
 // Student Authentication
 export const loginStudent = async (req, res) => {
@@ -384,5 +385,85 @@ export const changePassword = async (req, res) => {
 
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+export const forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        // A simple approach to find the user across collections
+        const user = await Student.findOne({ email }) || 
+                     await Counsellor.findOne({ email }) || 
+                     await Volunteer.findOne({ email }) || 
+                     await Admin.findOne({ email });
+
+        if (!user) {
+            // To prevent email enumeration, always send a success-like response
+            return res.status(200).json({ success: true, message: "If an account with that email exists, a reset link has been sent." });
+        }
+
+        // Generate token
+        const resetToken = crypto.randomBytes(20).toString('hex');
+
+        // Hash token and set to user
+        user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        await user.save({ validateBeforeSave: false });
+
+        // Create reset URL
+        const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+        const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PATCH request to: \n\n ${resetUrl}`;
+
+        // *** EMAIL SENDING LOGIC WOULD GO HERE ***
+        // For now, we will log it to the console for testing.
+        console.log("Password Reset URL:", resetUrl);
+        // try {
+        //     await sendEmail({
+        //         email: user.email,
+        //         subject: 'Password Reset Token',
+        //         message
+        //     });
+        //     res.status(200).json({ success: true, data: 'Email sent' });
+        // } catch (err) {
+        //     user.passwordResetToken = undefined;
+        //     user.passwordResetExpires = undefined;
+        //     await user.save({ validateBeforeSave: false });
+        //     return next(new Error('Email could not be sent'));
+        // }
+        
+        res.status(200).json({ success: true, message: "If an account with that email exists, a reset link has been sent." });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ADD THIS SECOND NEW FUNCTION
+export const resetPassword = async (req, res, next) => {
+    try {
+        // Get hashed token
+        const passwordResetToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+        const user = await Student.findOne({ passwordResetToken, passwordResetExpires: { $gt: Date.now() } }) ||
+                     await Counsellor.findOne({ passwordResetToken, passwordResetExpires: { $gt: Date.now() } }) ||
+                     await Volunteer.findOne({ passwordResetToken, passwordResetExpires: { $gt: Date.now() } }) ||
+                     await Admin.findOne({ passwordResetToken, passwordResetExpires: { $gt: Date.now() } });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid or expired token" });
+        }
+
+        // Set new password
+        user.password = req.body.password;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Password reset successful" });
+
+    } catch (error) {
+        next(error);
     }
 };

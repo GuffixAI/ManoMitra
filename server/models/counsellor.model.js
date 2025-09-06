@@ -9,7 +9,7 @@ const counsellorSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 6 },
-    specialization: [{ type: String,  trim: true, maxlength: 200 }],
+    specialization: [{ type: String, trim: true, maxlength: 200 }],
     description: { type: String, maxlength: 1000 },
     qualifications: [String],
     experience: { type: Number, min: 0, default: 0 },
@@ -17,13 +17,23 @@ const counsellorSchema = new mongoose.Schema(
       {
         day: {
           type: String,
-          enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
-          required: true
+          enum: [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+          ],
+          required: true,
         },
-        slots: [{
-          start: { type: String, required: true },
-          end: { type: String, required: true }
-        }],
+        slots: [
+          {
+            start: { type: String, required: true },
+            end: { type: String, required: true },
+          },
+        ],
       },
     ],
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
@@ -32,20 +42,22 @@ const counsellorSchema = new mongoose.Schema(
         student: { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
         rating: { type: Number, min: 1, max: 5, required: true },
         comment: { type: String, maxlength: 500 },
-        createdAt: { type: Date, default: Date.now }
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     isActive: { type: Boolean, default: true },
+    passwordResetToken: String,
+    passwordResetExpires: Date,
     maxStudents: { type: Number, default: 20, min: 1, max: 50 },
     role: { type: String, default: ROLES.COUNSELLOR },
     profileImage: String,
     contactNumber: String,
-    emergencyContact: String
+    emergencyContact: String,
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
   }
 );
 
@@ -55,32 +67,35 @@ counsellorSchema.index({ "availableTime.day": 1 });
 counsellorSchema.index({ rating: -1 });
 
 // Virtual for average rating
-counsellorSchema.virtual('averageRating').get(function () {
+counsellorSchema.virtual("averageRating").get(function () {
   if (!this.feedback || this.feedback.length === 0) return 0; // Defensive check
   const total = this.feedback.reduce((sum, f) => sum + f.rating, 0);
   return (total / this.feedback.length).toFixed(1);
 });
 
 // Virtual for total feedback count
-counsellorSchema.virtual('feedbackCount').get(function () {
+counsellorSchema.virtual("feedbackCount").get(function () {
   if (!this.feedback) return 0; // Defensive check
   return this.feedback.length;
 });
 
 // Virtual for available slots count
-counsellorSchema.virtual('availableSlotsCount').get(function () {
+counsellorSchema.virtual("availableSlotsCount").get(function () {
   if (!this.availableTime) return 0; // Defensive check
-  return this.availableTime.reduce((total, day) => total + (day.slots ? day.slots.length : 0), 0);
+  return this.availableTime.reduce(
+    (total, day) => total + (day.slots ? day.slots.length : 0),
+    0
+  );
 });
 
 // Virtual for current student count
-counsellorSchema.virtual('currentStudentCount').get(function () {
+counsellorSchema.virtual("currentStudentCount").get(function () {
   if (!this.students) return 0; // Defensive check
   return this.students.length;
 });
 
 // Virtual for availability status
-counsellorSchema.virtual('isAvailable').get(function () {
+counsellorSchema.virtual("isAvailable").get(function () {
   return this.isActive && this.currentStudentCount < this.maxStudents;
 });
 
@@ -92,47 +107,58 @@ counsellorSchema.methods.getAverageRating = function () {
 };
 
 // Method to add student
-counsellorSchema.methods.addStudent = function(studentId) {
-  if (!this.students.includes(studentId) && this.currentStudentCount < this.maxStudents) {
+counsellorSchema.methods.addStudent = function (studentId) {
+  if (
+    !this.students.includes(studentId) &&
+    this.currentStudentCount < this.maxStudents
+  ) {
     this.students.push(studentId);
     return this.save();
   }
-  throw new Error('Cannot add more students or student already exists');
+  throw new Error("Cannot add more students or student already exists");
 };
 
 // Method to remove student
-counsellorSchema.methods.removeStudent = function(studentId) {
-  this.students = this.students.filter(id => id.toString() !== studentId.toString());
+counsellorSchema.methods.removeStudent = function (studentId) {
+  this.students = this.students.filter(
+    (id) => id.toString() !== studentId.toString()
+  );
   return this.save();
 };
 
 // Method to check availability for a specific time
-counsellorSchema.methods.isAvailableAt = function(day, time) {
-  const daySchedule = this.availableTime.find(d => d.day === day);
+counsellorSchema.methods.isAvailableAt = function (day, time) {
+  const daySchedule = this.availableTime.find((d) => d.day === day);
   if (!daySchedule) return false;
 
-  return daySchedule.slots.some(slot => {
+  return daySchedule.slots.some((slot) => {
     return time >= slot.start && time <= slot.end;
   });
 };
 
 // Method to get available slots for a day
-counsellorSchema.methods.getAvailableSlots = function(day) {
-  const daySchedule = this.availableTime.find(d => d.day === day);
+counsellorSchema.methods.getAvailableSlots = function (day) {
+  const daySchedule = this.availableTime.find((d) => d.day === day);
   return daySchedule ? daySchedule.slots : [];
 };
 
 // Method to add feedback
-counsellorSchema.methods.addFeedback = function(studentId, rating, comment = '') {
+counsellorSchema.methods.addFeedback = function (
+  studentId,
+  rating,
+  comment = ""
+) {
   // Remove existing feedback from same student
-  this.feedback = this.feedback.filter(f => f.student.toString() !== studentId.toString());
+  this.feedback = this.feedback.filter(
+    (f) => f.student.toString() !== studentId.toString()
+  );
 
   // Add new feedback
   this.feedback.push({
     student: studentId,
     rating,
     comment,
-    createdAt: new Date()
+    createdAt: new Date(),
   });
 
   return this.save();

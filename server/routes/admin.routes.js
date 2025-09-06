@@ -73,6 +73,7 @@ import {
   emergencyAccess,
   getUserById,
   // createSuperAdmin, // REMOVED FOR SECURITY
+  createCounsellor ,
   getProfile,
   updateProfile,
 } from "../controllers/admin.controller.js";
@@ -97,6 +98,7 @@ router.get("/analytics", getSystemAnalytics);
 
 // User management
 router.get("/users/students", getAllStudents);
+router.post("/users/counsellors", createCounsellor);
 router.get("/users/counsellors", getAllCounsellors);
 router.get("/users/volunteers", getAllVolunteers);
 router.get("/users/:userModel/:userId", getUserById);
