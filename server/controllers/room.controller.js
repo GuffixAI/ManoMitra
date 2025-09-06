@@ -138,15 +138,12 @@ export const addModerator = async (req, res) => {
       });
     }
 
-    if (!PEER_TOPICS.includes(topic)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Invalid topic" 
-      });
-    }
+    // FIX: The validation that checked if the topic was in the PEER_TOPICS array has been removed.
+    // This allows moderators to be added to custom rooms created by an admin.
 
     let room = await Room.findOne({ topic });
     if (!room) {
+      // This is a fallback, but generally rooms should be created via the "Create Room" feature first.
       room = await Room.create({ 
         topic, 
         description: `Support room for ${topic}` 
@@ -171,6 +168,8 @@ export const addModerator = async (req, res) => {
       data: populatedRoom
     });
   } catch (error) {
+    // This will now correctly catch any other potential errors, like database issues.
+    console.error("Error in addModerator:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

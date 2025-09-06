@@ -96,7 +96,7 @@ export function Sidebar({ className }: SidebarProps) {
           },
           {
             title: "Peer Support",
-            href: "/chat/general",
+            href: "/student/chat",
             icon: MessageSquare,
             badge: null,
           },
@@ -212,6 +212,12 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           {
+            title: "Rooms",
+            href: "/admin/rooms",
+            icon: MessageSquare,
+            badge: null,
+          },
+          {
             title: "System",
             href: "/admin/system",
             icon: Settings,
@@ -251,7 +257,7 @@ export function Sidebar({ className }: SidebarProps) {
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <Shield className="h-8 w-8 text-primary" />
-            <span className="font-bold text-lg">ManoMitra</span>
+            <span className="font-bold text-lg">Mitra</span>
           </div>
         )}
         {isCollapsed && (

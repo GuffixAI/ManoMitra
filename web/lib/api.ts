@@ -120,7 +120,7 @@ export const adminAPI = {
   getSystemAnalytics: async (params?: any) => api.get('/admin/analytics', { params }).then(res => res.data),
   emergencyAccess: async (userId: string, userType: string, action: 'suspend' | 'activate') => api.post('/admin/emergency', { userId, userType, action }).then(res => res.data),
   getAllCounsellors: async (params?: any) => api.get('/admin/users/counsellors', { params }).then(getData),
-  getAllVolunteers: async (params?: any) => api.get('/admin/users/volunteers', { params }).then(getData),
+  getAllVolunteers: async (params?: any) => api.get('/admin/users/volunteers', { params }).then(res => res.data),
   createCounsellor: async (data: any) => api.post('/admin/users/counsellors', data).then(res => res.data),
   
 };

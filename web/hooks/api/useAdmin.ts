@@ -29,12 +29,7 @@ export const useAllCounsellors = (params?: any) => {
   });
 };
 
-export const useAllVolunteers = (params?: any) => {
-  return useQuery({
-    queryKey: ["allVolunteers", params],
-    queryFn: () => adminAPI.getAllVolunteers(params),
-  });
-};
+
 
 export const useAllReports = (params?: any) => {
   return useQuery({
@@ -148,5 +143,15 @@ export const useCreateCounsellor = () => {
     onError: (err: any) => {
       toast.error(err.response?.data?.message || "Failed to create counsellor.");
     }
+  });
+};
+
+
+// in web/hooks/api/useAdmin.ts - The problem is here
+export const useAllVolunteers = (params?: any) => {
+  return useQuery({
+    queryKey: ["allVolunteers", params],
+    // This should be using adminAPI.getAllVolunteers
+    queryFn: () => adminAPI.getAllVolunteers(params), 
   });
 };
