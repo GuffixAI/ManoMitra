@@ -1,4 +1,4 @@
-// FILE: web/app/(dashboard)/student/volunteers/page.tsx
+// web/app/(dashboard)/student/volunteers/page.tsx
 "use client";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, CheckCircle, XCircle } from "lucide-react";
+import { UserPlus, XCircle, Star } from "lucide-react";
 import { useAvailableVolunteers, useConnectVolunteer, useDisconnectVolunteer, useStudentConnections } from "@/hooks/api/useStudents";
 
 export default function StudentVolunteersPage() {
@@ -56,19 +56,25 @@ export default function StudentVolunteersPage() {
           const isDisconnectPending = disconnectMutation.isPending && disconnectMutation.variables === volunteer._id;
 
           return (
-            <Card key={volunteer._id}>
-              <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={volunteer.profileImage} />
-                  <AvatarFallback>{volunteer.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle>{volunteer.name}</CardTitle>
-                  <CardDescription>Peer Volunteer</CardDescription>
+            <Card key={volunteer._id} className="flex flex-col">
+              <CardHeader className="flex flex-row items-start justify-between">
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12">
+                    <AvatarImage src={volunteer.profileImage} />
+                    <AvatarFallback>{volunteer.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                    <CardTitle>{volunteer.name}</CardTitle>
+                    <CardDescription>Peer Volunteer</CardDescription>
+                    </div>
+                </div>
+                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  <span className="font-semibold">{volunteer.averageRating || 'N/A'}</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-x-2">
+              <CardContent className="space-y-4 flex-grow flex flex-col justify-between">
+                <div className="space-x-1 space-y-1">
                     {volunteer.preferredTopics?.slice(0, 3).map((topic: string) => (
                         <Badge key={topic} variant="secondary" className="capitalize">{topic}</Badge>
                     ))}

@@ -6,13 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import { UserPlus, CheckCircle } from "lucide-react";
-import { useAvailableCounsellors, useConnectCounsellor, useStudentConnections } from "@/hooks/api/useStudents";
+import { UserPlus, CheckCircle, Star, XCircle } from "lucide-react";
+import { useAvailableCounsellors, useConnectCounsellor, useStudentConnections, useDisconnectCounsellor } from "@/hooks/api/useStudents";
 
 export default function StudentCounsellorsPage() {
   const { data: counsellorsResponse, isLoading: isLoadingCounsellors } = useAvailableCounsellors();
   const { data: connections, isLoading: isLoadingConnections } = useStudentConnections();
   const connectMutation = useConnectCounsellor();
+  const disconnectMutation = useDisconnectCounsellor(); // Added disconnect mutation
 
   const [connectedIds, setConnectedIds] = useState<string[]>([]);
 
@@ -27,6 +28,14 @@ export default function StudentCounsellorsPage() {
       onSuccess: () => {
         setConnectedIds((prev) => [...prev, counsellorId]);
       },
+    });
+  };
+
+  const handleDisconnect = (counsellorId: string) => {
+    disconnectMutation.mutate(counsellorId, {
+        onSuccess: () => {
+            setConnectedIds((prev) => prev.filter(id => id !== counsellorId));
+        }
     });
   };
 
@@ -47,46 +56,54 @@ export default function StudentCounsellorsPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {!isLoading && counsellors.map((counsellor: any) => {
           const isConnected = connectedIds.includes(counsellor._id);
+          const isConnectPending = connectMutation.isPending && connectMutation.variables === counsellor._id;
+          const isDisconnectPending = disconnectMutation.isPending && disconnectMutation.variables === counsellor._id;
+
           return (
-            <Card key={counsellor._id}>
-              <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={counsellor.profileImage} />
-                  <AvatarFallback>{counsellor.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <CardTitle>{counsellor.name}</CardTitle>
-                  <CardDescription>
-                    {Array.isArray(counsellor.specialization)
-                      ? counsellor.specialization.join(", ")
-                      : counsellor.specialization}
-                  </CardDescription>
+            <Card key={counsellor._id} className="flex flex-col">
+              <CardHeader className="flex flex-row items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={counsellor.profileImage} />
+                    <AvatarFallback>{counsellor.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle>{counsellor.name}</CardTitle>
+                    <CardDescription>
+                      {Array.isArray(counsellor.specialization)
+                        ? counsellor.specialization.join(", ")
+                        : counsellor.specialization}
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  <span className="font-semibold">{counsellor.averageRating || 'N/A'}</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 flex-grow flex flex-col justify-between">
                 <p className="text-sm text-muted-foreground line-clamp-3 h-[60px]">
                   {counsellor.description}
                 </p>
-                <Button
-                  className="w-full cursor-pointer"
-                  onClick={() => handleConnect(counsellor._id)}
-                  disabled={
-                    (connectMutation.isPending && connectMutation.variables === counsellor._id) || 
-                    isConnected
-                  }
-                >
-                  {isConnected ? (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Connected
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Connect
-                    </>
-                  )}
-                </Button>
+                {/* Conditional Button Rendering */}
+                {isConnected ? (
+                    <Button
+                        className="w-full"
+                        variant="secondary"
+                        onClick={() => handleDisconnect(counsellor._id)}
+                        disabled={isDisconnectPending}
+                    >
+                        <XCircle className="mr-2 h-4 w-4" /> Disconnect
+                    </Button>
+                ) : (
+                    <Button
+                        className="w-full"
+                        onClick={() => handleConnect(counsellor._id)}
+                        disabled={isConnectPending}
+                    >
+                        <UserPlus className="mr-2 h-4 w-4" /> Connect
+                    </Button>
+                )}
               </CardContent>
             </Card>
           );

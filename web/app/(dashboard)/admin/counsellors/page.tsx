@@ -1,37 +1,40 @@
-// app/(dashboard)/admin/counsellors/page.tsx
+// web/app/(dashboard)/admin/counsellors/page.tsx
 "use client";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAllCounsellors } from "@/hooks/api/useAdmin";
+import { useAllCounsellors, useCreateCounsellor, useUpdateUserStatus } from "@/hooks/api/useAdmin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreateCounsellorForm } from "@/components/forms/CreateCounsellorForm";
-import { useCreateCounsellor } from "@/hooks/api/useAdmin";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminCounsellorsPage() {
     const [isDialogOpen, setDialogOpen] = useState(false);
     const createCounsellorMutation = useCreateCounsellor();
+    const updateUserStatusMutation = useUpdateUserStatus();
     const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
     const handleCreateCounsellor = (data: any) => {
         createCounsellorMutation.mutate(data, {
             onSuccess: () => {
                 setDialogOpen(false);
-                reset(); // Reset form fields
-            },
-            onError: (error: any) => {
-                // Error is already handled by the hook's toast
+                reset();
             }
         });
     };
 
+    const handleStatusChange = (userId: string, currentStatus: boolean) => {
+        updateUserStatusMutation.mutate({ userId, userType: 'counsellor', isActive: !currentStatus });
+    };
+
     const { data: counsellorsResponse, isLoading } = useAllCounsellors();
-    const counsellors = counsellorsResponse || [];
+    const counsellors = counsellorsResponse?.data || [];
 
     return (
         <div className="space-y-6">
@@ -43,7 +46,6 @@ export default function AdminCounsellorsPage() {
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader><DialogTitle>Create New Counsellor Account</DialogTitle></DialogHeader>
-                        {/* Re-integrated the form directly for simplicity */}
                         <form onSubmit={handleSubmit(handleCreateCounsellor)} className="space-y-4 py-4">
                             <div>
                                 <Label htmlFor="name">Full Name</Label>
@@ -72,7 +74,6 @@ export default function AdminCounsellorsPage() {
                         </form>
                     </DialogContent>
                 </Dialog>
-                {/* FIX: Removed the duplicate button that was here */}
             </div>
             <Table>
                 <TableHeader>
@@ -80,15 +81,29 @@ export default function AdminCounsellorsPage() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Specialization</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Active</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {isLoading ? <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>
+                    {isLoading ? <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>
                     : counsellors?.map((c: any) => (
                         <TableRow key={c._id}>
                             <TableCell>{c.name}</TableCell>
                             <TableCell>{c.email}</TableCell>
                             <TableCell>{Array.isArray(c.specialization) ? c.specialization.join(', ') : c.specialization}</TableCell>
+                            <TableCell>
+                                <Badge variant={c.isActive ? 'default' : 'destructive'}>
+                                    {c.isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Switch
+                                    checked={c.isActive}
+                                    onCheckedChange={() => handleStatusChange(c._id, c.isActive)}
+                                    disabled={updateUserStatusMutation.isPending}
+                                />
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

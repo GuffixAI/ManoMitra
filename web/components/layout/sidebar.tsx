@@ -223,6 +223,7 @@ export function Sidebar({ className }: SidebarProps) {
             icon: Settings,
             badge: null,
           },
+          { title: "Feedback", href: "/admin/feedback", icon: Star, badge: null },
           {
             title: "Notifications",
             href: "/admin/notifications",
