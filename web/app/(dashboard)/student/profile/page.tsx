@@ -16,16 +16,26 @@ export default function StudentProfilePage() {
   const { data: profile, isLoading: isLoadingProfile } = useStudentProfile();
   const updateProfileMutation = useUpdateStudentProfile();
 
-  const { register, handleSubmit, control, setValue, formState: { errors, isDirty } } = useForm();
+  const { register, handleSubmit, control, setValue, formState: { errors, isDirty } } = useForm({
+    // FIX: Provide default values to prevent uncontrolled -> controlled warning
+    defaultValues: {
+      name: "",
+      contactNumber: "",
+      academicYear: 1,
+      department: "",
+      gender: "prefer_not_to_say",
+    }
+  });
 
   useEffect(() => {
     if (profile) {
       // Pre-fill the form with existing profile data
-      setValue("name", profile.name);
-      setValue("contactNumber", profile.contactNumber);
-      setValue("academicYear", profile.academicYear);
-      setValue("department", profile.department);
-      setValue("gender", profile.gender);
+      setValue("name", profile.name || "");
+      // FIX: Ensure a defined value (empty string) is passed if the property is null or undefined
+      setValue("contactNumber", profile.contactNumber || "");
+      setValue("academicYear", profile.academicYear || 1);
+      setValue("department", profile.department || "");
+      setValue("gender", profile.gender || "prefer_not_to_say");
     }
   }, [profile, setValue]);
 
@@ -100,7 +110,7 @@ export default function StudentProfilePage() {
                   name="gender"
                   control={control}
                   render={({ field }) => (
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger id="gender">
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>

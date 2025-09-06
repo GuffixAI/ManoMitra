@@ -103,39 +103,29 @@ export const getDashboardData = async (req, res) => {
   }
 };
 // Get available counsellors
-// Wrap the function with asyncHandler to handle errors automatically
 export const getAvailableCounsellors = asyncHandler(async (req, res, next) => {
-  // 1. Destructure and set defaults
   const { specialization, search } = req.query;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
 
-  // Log the raw query for debugging
-  console.log("Received query params:", req.query);
-
-  // 2. Build the query object safely
   const query = { isActive: true };
 
-  // VALIDATION: Ensure 'specialization' is a string before adding to the query
   if (specialization && typeof specialization === 'string') {
     query.specialization = { $regex: specialization, $options: 'i' };
   }
 
-  // VALIDATION: Ensure 'search' is a string before adding to the query
   if (search && typeof search === 'string') {
     query.name = { $regex: search, $options: 'i' };
   }
 
-  // 3. Execute database operations
   const counsellors = await Counsellor.find(query)
     .select('name email specialization description availableTime')
-    .limit(limit) // limit is already a number
+    .limit(limit)
     .skip((page - 1) * limit)
     .sort({ name: 1 });
 
   const total = await Counsellor.countDocuments(query);
 
-  // 4. Send the successful response
   res.status(200).json({
     success: true,
     data: counsellors,
@@ -148,21 +138,24 @@ export const getAvailableCounsellors = asyncHandler(async (req, res, next) => {
   });
 });
 
-
-
-
 // Get available volunteers
-export const getAvailableVolunteers = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, availability, search } = req.query;
-    
-    const query = { isActive: true, trainingCompleted: true };
-    if (availability) query.availability = availability;
-    if (search) query.name = { $regex: search, $options: 'i' };
+export const getAvailableVolunteers = asyncHandler(async (req, res, next) => {
+    const { availability, search } = req.query;
+    // FIX: Removed TypeScript syntax 'as string'
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+
+    const query = { isActive: true };
+    if (availability && typeof availability === 'string') {
+      query.availability = availability;
+    }
+    if (search && typeof search === 'string') {
+      query.name = { $regex: search, $options: 'i' };
+    }
 
     const volunteers = await Volunteer.find(query)
       .select('name email description skills interests availability preferredTopics')
-      .limit(limit * 1)
+      .limit(limit)
       .skip((page - 1) * limit)
       .sort({ name: 1 });
 
@@ -172,18 +165,14 @@ export const getAvailableVolunteers = async (req, res) => {
       success: true,
       data: volunteers,
       pagination: {
-        currentPage: parseInt(page),
+        currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: parseInt(limit)
+        itemsPerPage: limit
       }
     });
+});
 
-    console.log(`Volunteer ${volunteers}`)
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
 
 // Connect with counsellor
 export const connectCounsellor = async (req, res) => {
@@ -207,7 +196,6 @@ export const connectCounsellor = async (req, res) => {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    // Check if already connected
     if (student.counsellorConnected.includes(counsellorId)) {
       return res.status(409).json({ 
         success: false, 
@@ -237,7 +225,6 @@ export const disconnectCounsellor = async (req, res) => {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    // Check if connected
     if (!student.counsellorConnected.includes(counsellorId)) {
       return res.status(404).json({ 
         success: false, 
@@ -272,10 +259,10 @@ export const connectVolunteer = async (req, res) => {
     }
 
     const volunteer = await Volunteer.findById(volunteerId);
-    if (!volunteer || !volunteer.isActive || !volunteer.trainingCompleted) {
+    if (!volunteer || !volunteer.isActive) {
       return res.status(404).json({ 
         success: false, 
-        message: "Volunteer not found, inactive, or not trained" 
+        message: "Volunteer not found or inactive" 
       });
     }
 
@@ -284,7 +271,6 @@ export const connectVolunteer = async (req, res) => {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    // Check if already connected
     if (student.volunteerConnected.includes(volunteerId)) {
       return res.status(409).json({ 
         success: false, 
@@ -313,7 +299,6 @@ export const disconnectVolunteer = async (req, res) => {
       return res.status(404).json({ success: false, message: "Student not found" });
     }
 
-    // Check if connected
     if (!student.volunteerConnected.includes(volunteerId)) {
       return res.status(404).json({ 
         success: false, 

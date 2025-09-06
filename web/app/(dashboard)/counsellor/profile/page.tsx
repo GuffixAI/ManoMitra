@@ -17,23 +17,30 @@ export default function CounsellorProfilePage() {
     const updateProfileMutation = useUpdateCounsellorProfile();
     const updateAvailabilityMutation = useUpdateAvailability();
 
-    const { register, handleSubmit, setValue, formState: { isDirty } } = useForm();
+    const { register, handleSubmit, setValue, formState: { isDirty } } = useForm({
+        // FIX: Provide default values to prevent uncontrolled -> controlled warning
+        defaultValues: {
+            name: "",
+            specialization: "",
+            description: ""
+        }
+    });
     
     React.useEffect(() => {
         if (profile) {
-            setValue("name", profile.name);
+            setValue("name", profile.name || "");
             // Ensure specialization is a string for the input field
             setValue("specialization", Array.isArray(profile.specialization) ? profile.specialization.join(', ') : profile.specialization || "");
-            setValue("description", profile.description);
+            // FIX: Ensure a defined value (empty string) is passed if the property is null or undefined
+            setValue("description", profile.description || "");
         }
     }, [profile, setValue]);
 
     const handleAvailabilitySubmit = (data: any) => {
-        updateAvailabilityMutation.mutate(data);
+        updateAvailabilityMutation.mutate({ availableTime: data });
     };
 
     const onSubmit = (data: any) => {
-        // Convert comma-separated string back to array for the API
         const updatedData = {
             ...data,
             specialization: data.specialization.split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -48,7 +55,6 @@ export default function CounsellorProfilePage() {
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold">My Profile</h1>
-            {/* FIX: Changed to a responsive grid layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <Card className="lg:col-span-2">
                     <CardHeader>

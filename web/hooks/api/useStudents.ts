@@ -7,7 +7,7 @@ import { toast } from "sonner";
 export const useStudentProfile = () => {
   return useQuery({
     queryKey: ["studentProfile"],
-    queryFn: () => studentAPI.getProfile().then(res => res.data),
+    queryFn: () => studentAPI.getProfile(), // FIX: Removed redundant .then()
   });
 };
 

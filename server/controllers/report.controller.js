@@ -253,8 +253,9 @@ export const updateReportStatus = async (req, res) => {
     }
 
     // Check if the counsellor is assigned to this report
-    if (report.assignedTo?.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Access denied" });
+    // FIX: Explicitly check the _id of the populated document
+    if (report.assignedTo?._id.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Access denied. You are not assigned to this report." });
     }
 
     // Update report status
@@ -266,7 +267,7 @@ export const updateReportStatus = async (req, res) => {
           recipient: report.owner,
           recipientModel: 'Student',
           type: 'report_resolved',
-          category: 'report', // BUG FIX: Added required category field
+          category: 'report', 
           title: 'Your Report has been Resolved',
           message: `Your report titled "${report.title}" has been resolved by your counsellor.`,
           data: { reportId: report._id, counsellorId: req.user.id }
@@ -290,7 +291,7 @@ export const updateReportStatus = async (req, res) => {
   }
 };
 
-// Counsellor: Get report details
+// Counsellor or Admin: Get report details
 export const getReportDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -302,13 +303,13 @@ export const getReportDetails = async (req, res) => {
     if (!report) {
       return res.status(404).json({ success: false, message: "Report not found" });
     }
-
-    // FIX: Allow access if the user is the assigned counsellor OR an admin.
-    const isAssignedCounsellor = report.assignedTo?.toString() === req.user.id;
+    
+    // FIX: Corrected the authorization check
+    const isAssignedCounsellor = report.assignedTo && report.assignedTo._id.toString() === req.user.id;
     const isAdmin = req.user.role === ROLES.ADMIN;
 
     if (!isAssignedCounsellor && !isAdmin) {
-      return res.status(403).json({ success: false, message: "Access denied" });
+      return res.status(403).json({ success: false, message: "You do not have permission to view this report." });
     }
 
     res.status(200).json({
@@ -319,6 +320,7 @@ export const getReportDetails = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // Get urgent reports (for counsellors and admins)
 export const getUrgentReports = async (req, res) => {
