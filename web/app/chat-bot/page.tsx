@@ -1,129 +1,170 @@
 "use client";
 
-import { useState, useRef, useEffect, FormEvent } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Bot, User, ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from "motion/react";
-import { useAuthStore } from '@/store/auth.store';
-import Link from 'next/link';
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputToolbar,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
+import { Action, Actions } from "@/components/ai-elements/actions";
+import React, { useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { Response } from "@/components/ai-elements/response";
+import { CopyIcon } from "lucide-react";
+import {
+  Source,
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+} from "@/components/ai-elements/sources";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "@/components/ai-elements/reasoning";
+import { Loader } from "@/components/ai-elements/loader";
+import Link from "next/link";
+import { motion } from "motion/react";
 
-interface Message {
-  text: string;
-  sender: 'user' | 'bot';
-}
+const ChatInterface = () => {
+  const [input, setInput] = useState("");
+  const { messages, sendMessage, status } = useChat();
 
-export default function ChatBotPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    { text: "Hello! I'm your AI assistant. Feel free to talk about anything on your mind.", sender: 'bot' }
-  ]);
-  const [input, setInput] = useState('');
-  const [isBotTyping, setIsBotTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuthStore();
+  const [reportLoading,setReportLoading] = useState(false)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  
 
-  useEffect(scrollToBottom, [messages, isBotTyping]);
-
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage: Message = { text: input, sender: 'user' };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsBotTyping(true);
-
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse: Message = { text: "This is a placeholder response for the chat-based bot. AI functionality will be implemented here.", sender: 'bot' };
-      setMessages(prev => [...prev, botResponse]);
-      setIsBotTyping(false);
-    }, 1500);
+    if (input.trim()) {
+      sendMessage({ text: input });
+      setInput("");
+    }
   };
+
+  const handleGenerateReport=(e: React.FormEvent)=>{
+    e.preventDefault();
+
+
+  }
 
   return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center bg-muted/40 p-4">
-      <Card className="flex h-full w-full max-w-3xl flex-col">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/pre-dashboard"><ArrowLeft /></Link>
-            </Button>
-            <CardTitle className="flex items-center gap-2">
-              <Bot /> AI Chat Assistant
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto pr-4 space-y-4">
-          <AnimatePresence>
-            {messages.map((msg, index) => (
-              <motion.div
-                key={index}
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.3 }}
-                className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {msg.sender === 'bot' && (
-                  <Avatar className="h-8 w-8 bg-muted text-muted-foreground">
-                    <AvatarFallback><Bot size={18} /></AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={`rounded-lg p-3 max-w-sm ${
-                    msg.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                  }`}
-                >
-                  <p>{msg.text}</p>
-                </div>
-                {msg.sender === 'user' && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                )}
-              </motion.div>
+    <div className="relative max-w-4xl mx-auto p-6 relative size-full h-screen">
+      <div className="flex flex-col h-full">
+        <Conversation className="h-full">
+          <ConversationContent>
+            {messages.map((message) => (
+              <div key={message.id}>
+                {message.role === "assistant" &&
+                  message.parts.filter((part) => part.type === "source-url")
+                    .length > 0 && (
+                    <Sources>
+                      <SourcesTrigger
+                        count={
+                          message.parts.filter(
+                            (part) => part.type === "source-url"
+                          ).length
+                        }
+                      />
+                      {message.parts
+                        .filter((part) => part.type === "source-url")
+                        .map((part, i) => (
+                          <SourcesContent key={`${message.id}-${i}`}>
+                            <Source
+                              key={`${message.id}-${i}`}
+                              href={part.url}
+                              title={part.url}
+                            />
+                          </SourcesContent>
+                        ))}
+                    </Sources>
+                  )}
+                {message.parts.map((part, i) => {
+                  switch (part.type) {
+                    case "text":
+                      return (
+                        <React.Fragment key={`${message.id}-${i}`}>
+                          <Message from={message.role}>
+                            <MessageContent>
+                              <Response>{part.text}</Response>
+                            </MessageContent>
+                          </Message>
+                          {message.role === "assistant" &&
+                            i === messages.length - 1 && (
+                              <Actions className="mt-2">
+                                <Action
+                                  onClick={() =>
+                                    navigator.clipboard.writeText(part.text)
+                                  }
+                                  label="Copy"
+                                >
+                                  <CopyIcon className="size-3" />
+                                </Action>
+                              </Actions>
+                            )}
+                        </React.Fragment>
+                      );
+                    case "reasoning":
+                      return (
+                        <Reasoning
+                          key={`${message.id}-${i}`}
+                          className="w-full"
+                          isStreaming={
+                            status === "streaming" &&
+                            i === message.parts.length - 1 &&
+                            message.id === messages.at(-1)?.id
+                          }
+                        >
+                          <ReasoningTrigger />
+                          <ReasoningContent>{part.text}</ReasoningContent>
+                        </Reasoning>
+                      );
+                    default:
+                      return null;
+                  }
+                })}
+              </div>
             ))}
-            {isBotTyping && (
-                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-end gap-2 justify-start"
-                 >
-                    <Avatar className="h-8 w-8 bg-muted text-muted-foreground">
-                        <AvatarFallback><Bot size={18} /></AvatarFallback>
-                    </Avatar>
-                    <div className="rounded-lg p-3 max-w-sm bg-muted flex items-center gap-1">
-                        <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                        <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                        <span className="h-2 w-2 bg-muted-foreground rounded-full animate-bounce"></span>
-                    </div>
-                 </motion.div>
-            )}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
-        </CardContent>
-        <div className="p-4 border-t">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              autoComplete="off"
-            />
-            <Button type="submit">
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+            {status === "submitted" && <Loader />}
+          </ConversationContent>
+          <ConversationScrollButton />
+        </Conversation>
+
+        <div className="flex-shrink-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <PromptInput onSubmit={handleSubmit} className="w-full">
+              <PromptInputTextarea
+                onChange={(e) => setInput(e.target.value)}
+                value={input}
+                className="min-h-[60px] resize-none"
+                placeholder="Type your message here..."
+              />
+              <PromptInputToolbar className="px-3 py-2">
+                <PromptInputSubmit
+                  disabled={!input || reportLoading}
+                  status={status}
+                  className="cursor-pointer"
+                />
+                {
+                  messages.length>10 && <button disabled={reportLoading} onClick={handleGenerateReport} className="rounded-lg bg-white text-gray-800 shadow-md hover:bg-gray-200 px-4 py-2 cursor-pointer">
+                  <small>Generate Report</small>
+                </button>
+                }
+                
+              </PromptInputToolbar>
+            </PromptInput>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
-}
+};
+
+export default ChatInterface;

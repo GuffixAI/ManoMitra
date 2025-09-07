@@ -1,0 +1,95 @@
+{
+  "demo_report": {
+    "student_summary": "You're feeling overwhelmed by upcoming exams, struggling with sleep, and worried about failing. It's understandable that this pressure makes it hard to focus and makes you feel alone. Remember that many students share these feelings.",
+    "key_takeaways": [
+      "Addressing feelings around upcoming exams",
+      "Addressing feelings around fear of failure",
+      "Addressing feelings around sleep problems",
+      "Addressing feelings around feeling alone"
+    ],
+    "suggested_first_steps": [
+      "Take a moment for yourself with a short, guided breathing exercise.",
+      "Browse one of the articles below that feels most relevant to you right now.",
+      "Consider scheduling a confidential chat with a campus counselor. It's a free and supportive service."
+    ],
+    "helpful_resources": {
+      "videos_and_audio": [
+        {
+          "title": "5-Minute Meditation",
+          "url": "https://youtube.com/...",
+          "description": "A short video to help calm your mind when you feel overwhelmed."
+        }
+      ],
+      "articles_and_guides": [
+        {
+          "title": "Coping with Exam Stress",
+          "url": "https://helpguide.org/...",
+          "description": "An article with practical tips for managing stress during exam season."
+        }
+      ],
+      "on_campus_support": [
+        {
+          "title": "Book a Counselor Appointment",
+          "url": "https://yourcollege.edu/counseling",
+          "description": "Your link to schedule a private session with a professional counselor on campus."
+        }
+      ]
+    },
+    "message_of_encouragement": "Please remember, it's okay to not be okay, and reaching out for support is a sign of strength. You've already taken a positive step. We're here to help."
+  },
+  "standard_report": {
+    "student_id": "anonymous_student_123",
+    "chat_summary": "Student reported feeling overwhelmed by upcoming exams, experiencing insomnia, and significant fear of failure, impacting their ability to study effectively.  Reports feeling alone in this struggle.",
+    "risk_assessment": {
+      "sentiment": "Overwhelmed",
+      "emotional_intensity": "Moderate",
+      "risk_level": "Low",
+      "red_flags": [
+        "Sleep problems",
+        "Feelings of being alone"
+      ]
+    },
+    "screening_scores": {
+      "phq_9_score": 5,
+      "gad_7_score": 7,
+      "interpretation": "The student shows some symptoms of anxiety and depression, but further evaluation is needed. The scores suggest mild anxiety and depression, but a formal diagnosis cannot be made based on this short conversation."
+    },
+    "counselor_recommendations": {
+      "recommended_resources": [
+        {
+          "category": "Psychoeducational Guide",
+          "title": "HelpGuide.org: A trusted guide to mental health",
+          "url": "https://www.helpguide.org/",
+          "relevance": "Provides evidence-based, easy-to-understand information on anxiety, stress, and sleep issues that can be shared with the student.",
+          "source_tool": "tavily_search"
+        },
+        {
+          "category": "University Mental Health Portal",
+          "title": "Georgia Tech Self-Help Resources",
+          "url": "https://mentalhealth.gatech.edu/resources/students/self-help-resources",
+          "relevance": "Example of a well-structured university resource hub for student self-help.",
+          "source_tool": "tavily_search"
+        }
+      ],
+      "suggested_next_steps": [
+        "Prioritize student for outreach due to high GAD-7 score and expressed feelings of isolation.",
+        "In initial session, explore the theme of 'fear of failure' and its connection to academic pressure.",
+        "Introduce psychoeducation on the connection between anxiety, sleep disruption, and concentration."
+      ]
+    },
+    "analytics": {
+      "key_stressors_identified": [
+        "Upcoming exams",
+        "Fear of failure",
+        "Sleep problems",
+        "Feeling alone"
+      ],
+      "potential_underlying_issues": [
+        "Perfectionism",
+        "Imposter Syndrome",
+        "Lack of effective study/coping strategies"
+      ]
+    },
+    "report_generated_at": "2025-09-07T16:12:33.222034"
+  }
+}
