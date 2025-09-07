@@ -1,7 +1,6 @@
-// web/app/(dashboard)/student/notifications/page.tsx
 "use client";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
-export default function StudentNotificationsPage() {
+export default function CounsellorNotificationsPage() {
   return <NotificationCenter />;
 }

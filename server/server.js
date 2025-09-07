@@ -24,6 +24,8 @@ import Volunteer from "./models/volunteer.model.js";
 import Admin from "./models/admin.model.js";
 import Conversation from "./models/conversation.model.js";
 import PrivateMessage from "./models/privateMessage.model.js";
+import Notification from "./models/notification.model.js";
+
 
 
 import { devLogging, prodLogging, errorLogging } from './middlewares/logging.middleware.js';
@@ -425,6 +427,8 @@ privateChat.on("connection", (socket) => {
                 });
             }
 
+
+
             socket.emit("joined", { roomId, conversationId: conversation._id });
             console.log(`User ${myId} joined private room: ${roomId}`);
 
@@ -460,6 +464,36 @@ privateChat.on("connection", (socket) => {
 
             // Emit to the specific private room
             privateChat.to(roomId).emit("message", populatedMsg);
+
+            // --- START: NEW NOTIFICATION LOGIC ---
+
+            // 1. Find the conversation to identify the recipient
+            const conversation = await Conversation.findById(conversationId).populate('participants.user', 'name');
+            if (!conversation) return;
+
+            // 2. Find the recipient (the other participant who is not the sender)
+            const recipientParticipant = conversation.participants.find(p => p.user._id.toString() !== socket.user.id);
+            if (!recipientParticipant) return;
+
+            // 3. Create the notification
+            await Notification.create({
+                recipient: recipientParticipant.user._id,
+                recipientModel: recipientParticipant.userModel,
+                sender: socket.user.id,
+                senderModel: senderModel,
+                type: 'message_received',
+                category: 'chat',
+                title: `New Message from ${populatedMsg.sender.name}`,
+                message: populatedMsg.content,
+                data: {
+                    conversationId: conversation._id,
+                    senderId: socket.user.id,
+                    senderName: populatedMsg.sender.name,
+                },
+                actionUrl: `/messages/${socket.user.id}/${socket.user.role}` 
+            });
+            
+            // --- END: NEW NOTIFICATION LOGIC ---
 
         } catch (error) {
             console.error("Private message error:", error);

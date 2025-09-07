@@ -1,4 +1,4 @@
-// web/hooks/api/useNotifications.ts
+// FILE: web/hooks/api/useNotifications.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -11,14 +11,20 @@ export const useUserNotifications = (params?: any) => {
   });
 };
 
-// Get the count of unread notifications
-export const useUnreadCount = () => {
+// --- START OF CORRECTION ---
+
+// Get the count of unread notifications (now accepts an optional category)
+export const useUnreadCount = (category?: string) => {
   return useQuery({
-    queryKey: ["unreadNotificationsCount"],
-    queryFn: () => notificationAPI.getUnreadCount(),
+    // The query key now includes the category to differentiate caches
+    queryKey: ["unreadNotificationsCount", category], 
+    // The category is passed to the API function
+    queryFn: () => notificationAPI.getUnreadCount(category), 
     refetchInterval: 60000, // Refetch every 60 seconds
   });
 };
+
+// --- END OF CORRECTION ---
 
 // Mark a single notification as read
 export const useMarkAsRead = () => {
@@ -51,21 +57,6 @@ export const useMarkAllAsRead = () => {
   });
 };
 
-// Archive a notification
-export const useArchiveNotification = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => notificationAPI.archive(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("Notification archived.");
-    },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || "Failed to archive notification.");
-    },
-  });
-};
-
 // Delete a notification
 export const useDeleteNotification = () => {
     const queryClient = useQueryClient();
@@ -81,7 +72,20 @@ export const useDeleteNotification = () => {
     });
 };
 
-
+// Archive a notification
+export const useArchiveNotification = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => notificationAPI.archive(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("Notification archived.");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to archive notification.");
+    },
+  });
+};
 
 // Get user's notification preferences
 export const useNotificationPreferences = () => {

@@ -1,36 +1,20 @@
-// web/components/notifications/NotificationCenter.tsx
+// FILE: web/components/notifications/NotificationCenter.tsx
 "use client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationAPI } from "@/lib/api";
+import { useUserNotifications, useMarkAllAsRead } from "@/hooks/api/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-import { Bell, BellOff, CheckCheck } from "lucide-react";
+import { BellOff, CheckCheck } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { toast } from "sonner";
 
 dayjs.extend(relativeTime);
 
 export function NotificationCenter() {
-  const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => notificationAPI.getUserNotifications({ limit: 50 }),
-  });
-
-  // FIX: Correctly access the nested notifications array
+  const { data, isLoading } = useUserNotifications({ limit: 50 });
+  const markAllReadMutation = useMarkAllAsRead();
+  
   const notifications = data?.data?.notifications || [];
-
-  const markAllReadMutation = useMutation({
-    mutationFn: () => notificationAPI.markAllAsRead(),
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
-        queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] }); // Invalidate count query too
-        toast.success("All notifications marked as read.");
-    },
-    onError: () => toast.error("Failed to mark all as read.")
-  });
 
   return (
     <div className="space-y-6">

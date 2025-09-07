@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useUnreadCount } from "@/hooks/api/useNotifications";
 import {
   Home,
   Calendar,
@@ -38,6 +39,10 @@ export function Sidebar({ className }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+
+  // Fetch unread count specifically for chat notifications
+  const { data: chatUnreadData } = useUnreadCount("chat");
+  const chatUnreadCount = chatUnreadData?.unreadCount || 0;
 
   const handleLogout = async () => {
     try {
@@ -95,11 +100,11 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           {
-    title: "Messages",
-    href: "/messages", 
-    icon: MessageSquare,
-    badge: null,
-},
+            title: "Messages",
+            href: "/messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount > 0 ? chatUnreadCount : null,
+          },
           {
             title: "Peer Support",
             href: "/student/chat",
@@ -142,11 +147,11 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           {
-    title: "Messages",
-    href: "/messages",
-    icon: MessageSquare,
-    badge: null,
-},
+            title: "Messages",
+            href: "/messages",
+            icon: MessageSquare,
+            badge: chatUnreadCount > 0 ? chatUnreadCount : null,
+          },
           {
             title: "Performance",
             href: "/counsellor/performance",
@@ -242,7 +247,12 @@ export function Sidebar({ className }: SidebarProps) {
             icon: Settings,
             badge: null,
           },
-          { title: "Feedback", href: "/admin/feedback", icon: Star, badge: null },
+          {
+            title: "Feedback",
+            href: "/admin/feedback",
+            icon: Star,
+            badge: null,
+          },
           {
             title: "Notifications",
             href: "/admin/notifications",
@@ -314,7 +324,10 @@ export function Sidebar({ className }: SidebarProps) {
                   <>
                     <span className="flex-1 text-left">{item.title}</span>
                     {item.badge && (
-                      <Badge variant="secondary" className="ml-auto">
+                      <Badge
+                        variant="destructive"
+                        className="ml-auto h-5 w-5 p-0 flex items-center justify-center"
+                      >
                         {item.badge}
                       </Badge>
                     )}
