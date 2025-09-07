@@ -16,6 +16,8 @@ export const getMyConversations = asyncHandler(async (req, res) => {
     })
     .sort({ updatedAt: -1 });
 
+    // console.log(conversations)
+
   res.status(200).json({ success: true, data: conversations });
 });
 

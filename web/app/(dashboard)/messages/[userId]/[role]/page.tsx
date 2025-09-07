@@ -24,6 +24,9 @@ interface Message {
 export default function PrivateChatPage() {
   const params = useParams();
   const recipientId = params.userId as string;
+  const recipientRole = params.role as string;
+
+  console.log(recipientRole)
   
   const { socket, isConnected } = useSocket('/private-chat');
   const { user } = useAuthStore();
@@ -54,7 +57,7 @@ export default function PrivateChatPage() {
 
   useEffect(() => {
     if (socket && isConnected && recipientId) {
-      socket.emit('join', { recipientId });
+      socket.emit('join', { recipientId ,recipientRole});
 
       socket.on('joined', (data: { roomId: string; conversationId: string }) => {
         setRoomId(data.roomId);

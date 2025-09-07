@@ -52,7 +52,7 @@ export default function VolunteerStudentsPage() {
                 <div className="mt-4">
                   {/* This is the chat button you needed! */}
                   <Button asChild variant="outline" className="w-full">
-                    <Link href={`/messages/${student._id}`}>
+                    <Link href={`/messages/${student._id}/${student?.role || "Student"}`}>
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Chat with {student.name}
                     </Link>

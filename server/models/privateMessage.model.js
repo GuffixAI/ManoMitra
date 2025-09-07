@@ -25,8 +25,15 @@ const privateMessageSchema = new mongoose.Schema(
     },
     readBy: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        refPath: "senderModel"
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          refPath: "readBy.userModel"
+        },
+        userModel: {
+          type: String,
+          required: true,
+          enum: ["Student", "Counsellor", "Volunteer", "Admin"]
+        }
       }
     ]
   },

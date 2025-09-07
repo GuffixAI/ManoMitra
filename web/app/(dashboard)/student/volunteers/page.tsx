@@ -140,7 +140,7 @@ export default function StudentVolunteersPage() {
 
                   {isConnected && (
                     <Button asChild variant="outline" size="sm">
-                      <Link href={`/messages/${volunteer._id}`}>Chat</Link>
+                      <Link href={`/messages/${volunteer._id}/${volunteer.role || "Volunteer"}`}>Chat</Link>
                     </Button>
                   )}
                 </CardContent>

@@ -14,7 +14,7 @@ import {
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
 import { Action, Actions } from "@/components/ai-elements/actions";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Response } from "@/components/ai-elements/response";
 import { CopyIcon } from "lucide-react";
@@ -31,15 +31,22 @@ import {
 } from "@/components/ai-elements/reasoning";
 import { Loader } from "@/components/ai-elements/loader";
 import Link from "next/link";
+import { Loader2, CheckCircle2, CopyCheckIcon } from "lucide-react";
 import { motion } from "motion/react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const ChatInterface = () => {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status } = useChat();
 
-  const [reportLoading,setReportLoading] = useState(false)
-
-  
+  const [reportLoading, setReportLoading] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +56,39 @@ const ChatInterface = () => {
     }
   };
 
-  const handleGenerateReport=(e: React.FormEvent)=>{
+  const steps = [
+    "Analyzing emotions and risk…",
+    "Estimating screening scores…",
+    "Summarizing your conversation…",
+    "Finding helpful resources…",
+    "Preparing your report…",
+  ];
+
+  const handleGenerateReport = (e: React.FormEvent) => {
     e.preventDefault();
 
+    setReportLoading(true);
+    setOpenModal(true);
+    setCurrentStep(0);
+  };
 
-  }
+  // Auto-progress steps
+  useEffect(() => {
+    if (reportLoading && currentStep < steps.length) {
+      const timer = setTimeout(() => {
+        setCurrentStep((prev) => prev + 1);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+
+    if (currentStep === steps.length) {
+      // ✅ finished steps
+      setTimeout(() => {
+        setReportLoading(false);
+        setOpenModal(false);
+      }, 1500);
+    }
+  }, [reportLoading, currentStep]);
 
   return (
     <div className="relative max-w-4xl mx-auto p-6 relative size-full h-screen">
@@ -152,17 +187,67 @@ const ChatInterface = () => {
                   status={status}
                   className="cursor-pointer"
                 />
-                {
-                  messages.length>10 && <button disabled={reportLoading} onClick={handleGenerateReport} className="rounded-lg bg-white text-gray-800 shadow-md hover:bg-gray-200 px-4 py-2 cursor-pointer">
-                  <small>Generate Report</small>
-                </button>
-                }
-                
+                {messages.length > -1 && (
+                  <button
+                    disabled={reportLoading}
+                    onClick={handleGenerateReport}
+                    className="rounded-lg bg-white text-gray-800 shadow-md hover:bg-gray-200 px-4 py-2 cursor-pointer"
+                  >
+                    <small>Generate Report</small>
+                  </button>
+                )}
               </PromptInputToolbar>
             </PromptInput>
           </div>
         </div>
       </div>
+
+      <Dialog open={openModal} onOpenChange={setOpenModal}>
+        <DialogContent className="sm:max-w-md rounded-xl shadow-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-center">
+              Generating Your Report
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-6">
+            {steps.map((step, i) => {
+              const isDone = i < currentStep;
+              const isActive = i === currentStep;
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="flex items-center gap-3"
+                >
+                  {isDone ? (
+                    <CheckCircle2 className="text-green-500 w-5 h-5" />
+                  ) : isActive ? (
+                    <Loader2 className="text-blue-500 w-5 h-5 animate-spin" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border border-gray-300"></div>
+                  )}
+
+                  <p
+                    className={`text-sm ${
+                      isDone
+                        ? "text-gray-500 line-through"
+                        : isActive
+                        ? "font-medium text-gray-800"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {step}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -376,10 +376,34 @@ privateChat.on("connection", (socket) => {
     console.log(`User ${socket.user.id} connected to private chat`);
 
     // Join a private room based on two user IDs
-    socket.on("join", async ({ recipientId }) => {
+    socket.on("join", async ({ recipientId, recipientRole }) => {
         try {
             const myId = socket.user.id;
-            
+
+            if (!recipientId || !recipientRole) {
+                return socket.emit("error", { message: "Recipient ID and role required" });
+            }
+
+            // Capitalize role to match model names
+            const validRoles = ["Student", "Counsellor", "Volunteer", "Admin"];
+            const recipientModel = recipientRole.charAt(0).toUpperCase() + recipientRole.slice(1);
+
+            if (!validRoles.includes(recipientModel)) {
+                return socket.emit("error", { message: "Invalid recipient role" });
+            }
+
+            // Optional: validate recipient exists in DB
+            const modelsMap = {
+                Student,
+                Counsellor,
+                Volunteer,
+                Admin,
+            };
+            const recipientExists = await modelsMap[recipientModel].exists({ _id: recipientId });
+            if (!recipientExists) {
+                return socket.emit("error", { message: "Recipient not found" });
+            }
+
             // Create a consistent room name by sorting IDs
             const roomId = [myId, recipientId].sort().join('-');
             socket.join(roomId);
@@ -392,13 +416,11 @@ privateChat.on("connection", (socket) => {
             // Step 2: If no conversation exists, create a new one
             if (!conversation) {
                 const myUserModel = socket.user.role.charAt(0).toUpperCase() + socket.user.role.slice(1);
-                
-                // Note: The recipient's userModel is simplified here. For a robust solution,
-                // the client should send the recipient's role along with their ID.
+
                 conversation = await Conversation.create({
                     participants: [
                         { user: myId, userModel: myUserModel },
-                        { user: recipientId, userModel: 'Student' } // This is a simplification
+                        { user: recipientId, userModel: recipientModel }
                     ]
                 });
             }
@@ -449,6 +471,7 @@ privateChat.on("connection", (socket) => {
         console.log(`User ${socket.user.id} disconnected from private chat`);
     });
 });
+
 // =================================================================
 // END OF THE FIX
 // =================================================================

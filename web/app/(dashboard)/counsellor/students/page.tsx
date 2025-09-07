@@ -123,7 +123,7 @@ export default function CounsellorStudentsPage() {
                     size="sm"
                     className="mt-2 w-full"
                   >
-                    <Link href={`/messages/${student._id}`}>
+                    <Link href={`/messages/${student._id}/${student.role || "Student"}`}>
                       Chat with {student.name}
                     </Link>
                   </Button>

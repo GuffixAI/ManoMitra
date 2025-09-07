@@ -1,6 +1,7 @@
 import { Base64 } from 'js-base64';
 import { TranscriptionService } from './transcriptionService';
 import { pcmToWav } from '../utils/audioUtils';
+import {SYSTEM_PROMPT} from './prompt'
 
 const MODEL = "models/gemini-2.0-flash-exp";
 const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
@@ -89,12 +90,20 @@ export class GeminiWebSocket {
   }
 
   private sendInitialSetup() {
+
     const setupMessage = {
       setup: {
         model: MODEL,
         generation_config: {
-          response_modalities: ["AUDIO"] 
-        }
+          response_modalities: ["AUDIO"]
+        },
+        system_instruction: {
+        parts: [
+          {
+            text: SYSTEM_PROMPT
+          }
+        ]
+      }
       }
     };
     this.ws?.send(JSON.stringify(setupMessage));

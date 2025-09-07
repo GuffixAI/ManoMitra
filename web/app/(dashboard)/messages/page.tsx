@@ -15,6 +15,8 @@ export default function MessagesListPage() {
   const { data: conversations, isLoading } = useMyConversations();
   const { user: currentUser } = useAuthStore();
 
+  console.log(conversations);
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold">My Conversations</h1>
@@ -34,7 +36,7 @@ export default function MessagesListPage() {
             {conversations?.map((convo: any) => {
               // Find the other participant in the conversation
               const otherParticipant = convo.participants.find(
-                (p: any) => p.user._id !== currentUser?._id
+                (p: any) => p.user && p.user._id !== currentUser?._id
               )?.user;
 
               if (!otherParticipant) return null;
@@ -56,9 +58,9 @@ export default function MessagesListPage() {
                       <div className="flex justify-between items-center">
                         <p className="font-semibold">{otherParticipant.name}</p>
                         {convo.lastMessage && (
-                           <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {dayjs(convo.lastMessage.createdAt).fromNow()}
-                           </p>
+                          </p>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
