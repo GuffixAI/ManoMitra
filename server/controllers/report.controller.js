@@ -267,7 +267,7 @@ export const updateReportStatus = async (req, res) => {
           recipient: report.owner,
           recipientModel: 'Student',
           type: 'report_resolved',
-          category: 'report', 
+          category: 'report',
           title: 'Your Report has been Resolved',
           message: `Your report titled "${report.title}" has been resolved by your counsellor.`,
           data: { reportId: report._id, counsellorId: req.user.id }

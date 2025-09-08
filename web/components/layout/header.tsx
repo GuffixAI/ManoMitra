@@ -83,6 +83,8 @@ export function Header({ className }: HeaderProps) {
   const unreadCount = unreadCountData?.unreadCount || 0;
   const notifications = notificationsData?.data?.notifications || [];
 
+  console.log(notifications)
+
   return (
     <header
       className={cn(

@@ -16,6 +16,7 @@ import {
   createCounsellor ,
   getProfile,
   updateProfile,
+  sendSystemNotification
 } from "../controllers/admin.controller.js";
 import { ROLES } from "../constants/roles.js";
 
@@ -45,5 +46,6 @@ router.patch("/reports/assign", assignReport);
 
 // Emergency access (requires special permission)
 router.post("/emergency", emergencyAccess);
+router.post("/notifications/system", sendSystemNotification);
 
 export default router;

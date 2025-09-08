@@ -169,7 +169,7 @@ export const notificationAPI = {
   getAdminUserNotifications: async (userId: string, userModel: string, params?: any) => 
     api.get(`/notifications/admin/user/${userId}/${userModel}`, { params }).then(res => res.data),
   sendSystemNotification: async (data: any) => 
-    api.post('/notifications/admin/system', data).then(res => res.data),
+    api.post('/admin/notifications/system', data).then(res => res.data),
   getNotificationStats: async () => 
     api.get('/notifications/admin/stats').then(getData),
   cleanupExpiredNotifications: async () => 

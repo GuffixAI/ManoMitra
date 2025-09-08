@@ -3,6 +3,7 @@ import Feedback from "../models/feedback.model.js";
 import Counsellor from "../models/counsellor.model.js";
 import Volunteer from "../models/volunteer.model.js";
 import crypto from "crypto";
+import Notification from "../models/notification.model.js";
 
 // Create feedback for counsellor or volunteer
 export const createFeedback = async (req, res) => {
@@ -90,6 +91,19 @@ export const createFeedback = async (req, res) => {
         }
       });
     }
+
+    await Notification.create({
+        recipient: targetId,
+        recipientModel: modelName,
+        sender: req.user.id,
+        senderModel: 'Student',
+        type: 'feedback_received',
+        category: 'feedback',
+        title: 'You Received New Feedback!',
+        message: `${rater ? rater.name : 'A student'} left you a ${rating}-star rating.`,
+        data: { feedbackId: feedback._id, rating },
+        actionUrl: `/${targetType}/feedback`
+    });
 
     res.status(201).json({ 
       success: true, 

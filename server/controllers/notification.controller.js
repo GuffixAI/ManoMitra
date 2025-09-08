@@ -12,9 +12,11 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
     includeExpired = false
   } = req.query;
 
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
+
   const notifications = await Notification.getUserNotifications(
     req.user.id,
-    req.user.role,
+    recipientModel,
     {
       limit: parseInt(limit),
       offset: parseInt(offset),
@@ -27,8 +29,10 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
 
   const total = await Notification.countDocuments({
     recipient: req.user.id,
-    recipientModel: req.user.role
+    recipientModel: recipientModel
   });
+
+  console.log(total)
 
   res.json({
     success: true,
@@ -47,10 +51,12 @@ export const getUserNotifications = asyncHandler(async (req, res) => {
 // Get unread count
 export const getUnreadCount = asyncHandler(async (req, res) => {
   const { category } = req.query;
+
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
   
   const count = await Notification.getUnreadCount(
     req.user.id,
-    req.user.role,
+    recipientModel,
     category
   );
 
@@ -64,10 +70,12 @@ export const getUnreadCount = asyncHandler(async (req, res) => {
 export const markAsRead = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
+
   const notification = await Notification.findOne({
     _id: id,
     recipient: req.user.id,
-    recipientModel: req.user.role
+    recipientModel: recipientModel
   });
 
   if (!notification) {
@@ -89,9 +97,11 @@ export const markAsRead = asyncHandler(async (req, res) => {
 export const markAllAsRead = asyncHandler(async (req, res) => {
   const { category } = req.query;
 
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
+
   let query = {
     recipient: req.user.id,
-    recipientModel: req.user.role,
+    recipientModel: recipientModel,
     isRead: false
   };
 
@@ -116,10 +126,12 @@ export const markAllAsRead = asyncHandler(async (req, res) => {
 export const archiveNotification = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
+
   const notification = await Notification.findOne({
     _id: id,
     recipient: req.user.id,
-    recipientModel: req.user.role
+    recipientModel: recipientModel
   });
 
   if (!notification) {
@@ -141,10 +153,12 @@ export const archiveNotification = asyncHandler(async (req, res) => {
 export const unarchiveNotification = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
+
   const notification = await Notification.findOne({
     _id: id,
     recipient: req.user.id,
-    recipientModel: req.user.role
+    recipientModel: recipientModel
   });
 
   if (!notification) {
@@ -166,10 +180,12 @@ export const unarchiveNotification = asyncHandler(async (req, res) => {
 export const deleteNotification = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  const recipientModel = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1);
+
   const notification = await Notification.findOne({
     _id: id,
     recipient: req.user.id,
-    recipientModel: req.user.role
+    recipientModel: recipientModel
   });
 
   if (!notification) {
@@ -262,6 +278,7 @@ export const getAdminUserNotifications = asyncHandler(async (req, res) => {
 // Admin: Send system notification
 export const sendSystemNotification = asyncHandler(async (req, res) => {
   const { recipients, type, title, message, data, priority = "normal" } = req.body;
+
 
   if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
     return res.status(400).json({

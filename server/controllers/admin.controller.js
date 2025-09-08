@@ -6,13 +6,16 @@ import Volunteer from "../models/volunteer.model.js";
 import Report from "../models/report.model.js";
 import Booking from "../models/booking.model.js";
 import { ROLES } from "../constants/roles.js";
+import Notification from "../models/notification.model.js";
 
 // ADDED: Get admin profile controller
 export const getProfile = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.id).select('-password');
+    const admin = await Admin.findById(req.user.id).select("-password");
     if (!admin) {
-      return res.status(404).json({ success: false, message: "Admin profile not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin profile not found" });
     }
     res.status(200).json({ success: true, data: admin });
   } catch (error) {
@@ -32,25 +35,29 @@ export const updateProfile = async (req, res) => {
       req.user.id,
       { $set: updateData },
       { new: true, runValidators: true }
-    ).select('-password');
+    ).select("-password");
 
     if (!updatedAdmin) {
-      return res.status(404).json({ success: false, message: "Admin not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Admin not found" });
     }
 
-    res.status(200).json({ success: true, message: "Profile updated successfully", data: updatedAdmin });
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedAdmin,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-// **REMOVED for security.** The creation of a super admin should be a 
+// **REMOVED for security.** The creation of a super admin should be a
 // one-time script run on the server, not a public API endpoint.
 /*
 export const createSuperAdmin = async (req, res) => { ... };
 */
-
 
 // Get admin dashboard statistics
 export const getDashboardStats = async (req, res) => {
@@ -62,7 +69,7 @@ export const getDashboardStats = async (req, res) => {
       totalReports,
       totalBookings,
       pendingReports,
-      urgentReports
+      urgentReports,
     ] = await Promise.all([
       Student.countDocuments({ isActive: true }),
       Counsellor.countDocuments({ isActive: true }),
@@ -70,7 +77,10 @@ export const getDashboardStats = async (req, res) => {
       Report.countDocuments(),
       Booking.countDocuments(),
       Report.countDocuments({ status: "pending" }),
-      Report.countDocuments({ priority: "urgent", status: { $in: ["pending", "in_progress"] } })
+      Report.countDocuments({
+        priority: "urgent",
+        status: { $in: ["pending", "in_progress"] },
+      }),
     ]);
 
     res.status(200).json({
@@ -79,15 +89,15 @@ export const getDashboardStats = async (req, res) => {
         users: {
           students: totalStudents,
           counsellors: totalCounsellors,
-          volunteers: totalVolunteers
+          volunteers: totalVolunteers,
         },
         reports: {
           total: totalReports,
           pending: pendingReports,
-          urgent: urgentReports
+          urgent: urgentReports,
         },
-        bookings: totalBookings
-      }
+        bookings: totalBookings,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -97,18 +107,25 @@ export const getDashboardStats = async (req, res) => {
 // Get all students with pagination and filters
 export const getAllStudents = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, department, academicYear, status } = req.query;
-    
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      department,
+      academicYear,
+      status,
+    } = req.query;
+
     const query = { isActive: true };
-    if (search) query.name = { $regex: search, $options: 'i' };
+    if (search) query.name = { $regex: search, $options: "i" };
     if (department) query.department = department;
     if (academicYear) query.academicYear = parseInt(academicYear);
-    if (status) query.isActive = status === 'active';
+    if (status) query.isActive = status === "active";
 
     const students = await Student.find(query)
-      .select('-password')
-      .populate('counsellorConnected', 'name email specialization')
-      .populate('volunteerConnected', 'name email')
+      .select("-password")
+      .populate("counsellorConnected", "name email specialization")
+      .populate("volunteerConnected", "name email")
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
@@ -122,8 +139,8 @@ export const getAllStudents = async (req, res) => {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -134,15 +151,16 @@ export const getAllStudents = async (req, res) => {
 export const getAllCounsellors = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, specialization, status } = req.query;
-    
+
     const query = { isActive: true };
-    if (search) query.name = { $regex: search, $options: 'i' };
-    if (specialization) query.specialization = { $regex: specialization, $options: 'i' };
-    if (status) query.isActive = status === 'active';
+    if (search) query.name = { $regex: search, $options: "i" };
+    if (specialization)
+      query.specialization = { $regex: specialization, $options: "i" };
+    if (status) query.isActive = status === "active";
 
     const counsellors = await Counsellor.find(query)
-      .select('-password')
-      .populate('students', 'name email studentCode')
+      .select("-password")
+      .populate("students", "name email studentCode")
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
@@ -156,8 +174,8 @@ export const getAllCounsellors = async (req, res) => {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -168,14 +186,14 @@ export const getAllCounsellors = async (req, res) => {
 export const getAllVolunteers = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, availability, status } = req.query;
-    
+
     const query = { isActive: true };
-    if (search) query.name = { $regex: search, $options: 'i' };
+    if (search) query.name = { $regex: search, $options: "i" };
     if (availability) query.availability = availability;
-    if (status) query.isActive = status === 'active';
+    if (status) query.isActive = status === "active";
 
     const volunteers = await Volunteer.find(query)
-      .select('-password')
+      .select("-password")
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
@@ -189,8 +207,8 @@ export const getAllVolunteers = async (req, res) => {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -201,15 +219,15 @@ export const getAllVolunteers = async (req, res) => {
 export const getAllReports = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, priority, category } = req.query;
-    
+
     const query = {};
     if (status) query.status = status;
     if (priority) query.priority = priority;
     if (category) query.category = category;
 
     const reports = await Report.find(query)
-      .populate('owner', 'name email studentCode')
-      .populate('assignedTo', 'name email specialization')
+      .populate("owner", "name email studentCode")
+      .populate("assignedTo", "name email specialization")
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 });
@@ -223,8 +241,8 @@ export const getAllReports = async (req, res) => {
         currentPage: page,
         totalPages: Math.ceil(total / limit),
         totalItems: total,
-        itemsPerPage: limit
-      }
+        itemsPerPage: limit,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -235,30 +253,47 @@ export const getAllReports = async (req, res) => {
 export const assignReport = async (req, res) => {
   try {
     const { reportId, counsellorId } = req.body;
-    
+
     if (!reportId || !counsellorId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Report ID and counsellor ID are required" 
+      return res.status(400).json({
+        success: false,
+        message: "Report ID and counsellor ID are required",
       });
     }
 
     const report = await Report.findById(reportId);
     if (!report) {
-      return res.status(404).json({ success: false, message: "Report not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Report not found" });
     }
 
     const counsellor = await Counsellor.findById(counsellorId);
     if (!counsellor || !counsellor.isActive) {
-      return res.status(404).json({ success: false, message: "Counsellor not found or inactive" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Counsellor not found or inactive" });
     }
 
     await report.assignToCounsellor(counsellorId);
-    
-    res.status(200).json({ 
-      success: true, 
+
+    await Notification.create({
+      recipient: counsellorId,
+      recipientModel: "Counsellor",
+      sender: req.user.id,
+      senderModel: "Admin",
+      type: "report_assigned",
+      category: "report",
+      title: "New Report Assigned",
+      message: `A report titled "${report.title}" has been assigned to you for review.`,
+      data: { reportId: report._id },
+      actionUrl: `/counsellor/reports/${report._id}`,
+    });
+
+    res.status(200).json({
+      success: true,
       message: "Report assigned successfully",
-      data: report
+      data: report,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -269,38 +304,54 @@ export const assignReport = async (req, res) => {
 export const updateUserStatus = async (req, res) => {
   try {
     const { userId, userType, isActive } = req.body;
-    
-    if (!userId || !userType || typeof isActive !== 'boolean') {
-      return res.status(400).json({ 
-        success: false, 
-        message: "User ID, user type, and status are required" 
+
+    if (!userId || !userType || typeof isActive !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "User ID, user type, and status are required",
       });
     }
 
     let user;
     // **FIX: Added .select('-password') to prevent leaking password hash**
     switch (userType) {
-      case 'student':
-        user = await Student.findByIdAndUpdate(userId, { isActive }, { new: true }).select('-password');
+      case "student":
+        user = await Student.findByIdAndUpdate(
+          userId,
+          { isActive },
+          { new: true }
+        ).select("-password");
         break;
-      case 'counsellor':
-        user = await Counsellor.findByIdAndUpdate(userId, { isActive }, { new: true }).select('-password');
+      case "counsellor":
+        user = await Counsellor.findByIdAndUpdate(
+          userId,
+          { isActive },
+          { new: true }
+        ).select("-password");
         break;
-      case 'volunteer':
-        user = await Volunteer.findByIdAndUpdate(userId, { isActive }, { new: true }).select('-password');
+      case "volunteer":
+        user = await Volunteer.findByIdAndUpdate(
+          userId,
+          { isActive },
+          { new: true }
+        ).select("-password");
         break;
       default:
-        return res.status(400).json({ success: false, message: "Invalid user type" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid user type" });
     }
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
-      data: user
+    res.status(200).json({
+      success: true,
+      message: `User ${isActive ? "activated" : "deactivated"} successfully`,
+      data: user,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -310,39 +361,35 @@ export const updateUserStatus = async (req, res) => {
 // Get system analytics
 export const getSystemAnalytics = async (req, res) => {
   try {
-    const { period = '30d' } = req.query;
-    
+    const { period = "30d" } = req.query;
+
     let startDate;
     const now = new Date();
-    
+
     switch (period) {
-      case '7d':
+      case "7d":
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
-      case '30d':
+      case "30d":
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
-      case '90d':
+      case "90d":
         startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
       default:
         startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     }
 
-    const [
-      newUsers,
-      newReports,
-      resolvedReports,
-      totalBookings
-    ] = await Promise.all([
-      Student.countDocuments({ createdAt: { $gte: startDate } }),
-      Report.countDocuments({ createdAt: { $gte: startDate } }),
-      Report.countDocuments({ 
-        status: 'resolved', 
-        resolvedAt: { $gte: startDate } 
-      }),
-      Booking.countDocuments({ createdAt: { $gte: startDate } })
-    ]);
+    const [newUsers, newReports, resolvedReports, totalBookings] =
+      await Promise.all([
+        Student.countDocuments({ createdAt: { $gte: startDate } }),
+        Report.countDocuments({ createdAt: { $gte: startDate } }),
+        Report.countDocuments({
+          status: "resolved",
+          resolvedAt: { $gte: startDate },
+        }),
+        Booking.countDocuments({ createdAt: { $gte: startDate } }),
+      ]);
 
     res.status(200).json({
       success: true,
@@ -355,9 +402,12 @@ export const getSystemAnalytics = async (req, res) => {
           newReports,
           resolvedReports,
           totalBookings,
-          resolutionRate: newReports > 0 ? ((resolvedReports / newReports) * 100).toFixed(2) : 0
-        }
-      }
+          resolutionRate:
+            newReports > 0
+              ? ((resolvedReports / newReports) * 100).toFixed(2)
+              : 0,
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -368,47 +418,81 @@ export const getSystemAnalytics = async (req, res) => {
 export const emergencyAccess = async (req, res) => {
   try {
     const { action, userId, userType } = req.body;
-    
-    if (!req.userDetails.hasPermission('emergency_access')) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Insufficient permissions for emergency access" 
+
+     let notificationTitle = '';
+    let notificationMessage = '';
+
+    if (!req.userDetails.hasPermission("emergency_access")) {
+      return res.status(403).json({
+        success: false,
+        message: "Insufficient permissions for emergency access",
       });
     }
 
     let user;
     switch (userType) {
-      case 'student':
+      case "student":
         user = await Student.findById(userId);
         break;
-      case 'counsellor':
+      case "counsellor":
         user = await Counsellor.findById(userId);
         break;
-      case 'volunteer':
+      case "volunteer":
         user = await Volunteer.findById(userId);
         break;
       default:
-        return res.status(400).json({ success: false, message: "Invalid user type" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid user type" });
     }
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
-    if (action === 'suspend') {
+    if (action === "suspend") {
       user.isActive = false;
+      notificationTitle = 'Account Suspended';
+      notificationMessage = 'Your account has been temporarily suspended by an administrator for security reasons.';
       await user.save();
-    } else if (action === 'activate') {
+
+
+
+    } else if (action === "activate") {
       user.isActive = true;
+      notificationTitle = 'Account Reactivated';
+      notificationMessage = 'Your account has been reactivated by an administrator. You can now log in again.';
       await user.save();
+
+
+
     } else {
-      return res.status(400).json({ success: false, message: "Invalid action" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid action" });
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: `User ${action === 'suspend' ? 'suspended' : 'activated'} successfully`,
-      data: user
+
+    await Notification.create({
+        recipient: userId,
+        recipientModel: userType.charAt(0).toUpperCase() + userType.slice(1), // Capitalize model name
+        sender: req.user.id,
+        senderModel: 'Admin',
+        type: 'emergency_alert',
+        category: 'emergency',
+        title: notificationTitle,
+        message: notificationMessage,
+        data: { action, adminId: req.user.id }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `User ${
+        action === "suspend" ? "suspended" : "activated"
+      } successfully`,
+      data: user,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -419,51 +503,59 @@ export const emergencyAccess = async (req, res) => {
 export const getUserById = async (req, res) => {
   try {
     const { userId, userModel } = req.params;
-    
+
     let user;
     switch (userModel) {
-      case 'student':
+      case "student":
         user = await Student.findById(userId)
-          .select('-password')
-          .populate('counsellorConnected', 'name email specialization')
-          .populate('volunteerConnected', 'name email')
-          .populate('reports', 'title status priority category');
+          .select("-password")
+          .populate("counsellorConnected", "name email specialization")
+          .populate("volunteerConnected", "name email")
+          .populate("reports", "title status priority category");
         break;
-      case 'counsellor':
+      case "counsellor":
         user = await Counsellor.findById(userId)
-          .select('-password')
-          .populate('students', 'name email studentCode');
+          .select("-password")
+          .populate("students", "name email studentCode");
         break;
-      case 'volunteer':
-        user = await Volunteer.findById(userId).select('-password');
+      case "volunteer":
+        user = await Volunteer.findById(userId).select("-password");
         break;
       default:
-        return res.status(400).json({ success: false, message: "Invalid user type" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid user type" });
     }
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
 export const createCounsellor = async (req, res) => {
   const { name, email, password, specialization } = req.body;
   if (!name || !email || !password || !specialization) {
-    return res.status(400).json({ success: false, message: "Name, email, password, and specialization are required" });
+    return res.status(400).json({
+      success: false,
+      message: "Name, email, password, and specialization are required",
+    });
   }
 
   const existing = await Counsellor.findOne({ email });
   if (existing) {
-    return res.status(409).json({ success: false, message: "Email already registered" });
+    return res
+      .status(409)
+      .json({ success: false, message: "Email already registered" });
   }
 
   const counsellor = await Counsellor.create({
@@ -471,8 +563,45 @@ export const createCounsellor = async (req, res) => {
     email,
     password,
     specialization,
-    isActive: true // Or false, requiring manual activation
+    isActive: true, // Or false, requiring manual activation
   });
 
-  res.status(201).json({ success: true, message: "Counsellor created successfully", data: counsellor });
+  res.status(201).json({
+    success: true,
+    message: "Counsellor created successfully",
+    data: counsellor,
+  });
+};
+
+
+
+// Add this new function to the end of the file
+export const sendSystemNotification = async (req, res) => {
+  try {
+    const { role, title, message } = req.body;
+
+    if (!role || !title || !message) {
+      return res.status(400).json({ success: false, message: "Role, title, and message are required." });
+    }
+
+    const validRoles = ["student", "counsellor", "volunteer"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ success: false, message: "Invalid role specified." });
+    }
+    
+    const Model = mongoose.model(role.charAt(0).toUpperCase() + role.slice(1));
+    const users = await Model.find({ isActive: true }).select('_id');
+    const recipients = users.map(u => ({ userId: u._id, userModel: Model.modelName }));
+
+    if (recipients.length === 0) {
+      return res.status(200).json({ success: true, message: `No active ${role}s to notify.` });
+    }
+
+    await Notification.createSystemNotification(recipients, 'system_announcement', title, message);
+
+    res.status(200).json({ success: true, message: `Notification sent to ${recipients.length} ${role}s.` });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
