@@ -18,6 +18,7 @@ const studentSchema = new mongoose.Schema(
     ],
     role: { type: String, default: ROLES.STUDENT },
     reports: [{ type: mongoose.Schema.Types.ObjectId, ref: "Report" }],
+    aiReports: [{ type: mongoose.Schema.Types.ObjectId, ref: "AIReport" }],
     profileImage: String,
     contactNumber: String,
     emergencyContact: String,

@@ -24,7 +24,11 @@ import {
   BookOpen,
   BarChart3,
   HelpCircle,
+  BrainCircuit,
   Star,
+  GroupIcon,
+  BotMessageSquareIcon,
+  ChartBarBigIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -43,6 +47,10 @@ export function Sidebar({ className }: SidebarProps) {
   // Fetch unread count specifically for chat notifications
   const { data: chatUnreadData } = useUnreadCount("chat");
   const chatUnreadCount = chatUnreadData?.unreadCount || 0;
+
+  // Fetch unread count for REPORT notifications
+  const { data: reportUnreadData } = useUnreadCount("report");
+  const reportUnreadCount = reportUnreadData?.unreadCount || 0;
 
   const handleLogout = async () => {
     try {
@@ -69,6 +77,19 @@ export function Sidebar({ className }: SidebarProps) {
       case "student":
         return [
           ...baseItems,
+          
+          {
+            title: "Chat Ai",
+            href: "/chat-bot",
+            icon: ChartBarBigIcon,
+            badge: null,
+          },
+          {
+            title: "Conversational Ai",
+            href: "/conversational-bot",
+            icon: BotMessageSquareIcon,
+            badge: null,
+          },
           {
             title: "Bookings",
             href: "/student/bookings",
@@ -76,10 +97,16 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           {
-            title: "Reports",
+            title: "My Reports",
             href: "/student/reports",
             icon: FileText,
             badge: null,
+          },
+          { 
+            title: "AI Reports",
+            href: "/student/ai-reports",
+            icon: BrainCircuit,
+            badge: reportUnreadCount > 0 ? reportUnreadCount : null,
           },
           {
             title: "Feedback",
@@ -106,9 +133,9 @@ export function Sidebar({ className }: SidebarProps) {
             badge: chatUnreadCount > 0 ? chatUnreadCount : null,
           },
           {
-            title: "Peer Support",
+            title: "Groups",
             href: "/student/chat",
-            icon: MessageSquare,
+            icon: GroupIcon,
             badge: null,
           },
           {
@@ -286,7 +313,8 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="flex h-16 items-center border-b px-4">
         {!isCollapsed && (
           <div className="flex items-center space-x-2">
-            <Shield className="h-8 w-8 text-primary" />
+            {/* <Shield className="h-8 w-8 text-primary" /> */}
+            <img src="/avatars/gemini.png" height="30" width="30" alt="" />
             <span className="font-bold text-lg">Mitra</span>
           </div>
         )}
@@ -349,7 +377,7 @@ export function Sidebar({ className }: SidebarProps) {
           <Button
             variant="ghost"
             className={cn(
-              "w-full justify-start",
+              "w-full justify-start cursor-pointer",
               isCollapsed ? "justify-center px-2" : "px-4"
             )}
           >
@@ -365,7 +393,7 @@ export function Sidebar({ className }: SidebarProps) {
           variant="ghost"
           onClick={handleLogout}
           className={cn(
-            "w-full justify-start text-destructive hover:text-destructive",
+            "w-full justify-start text-destructive hover:text-destructive cursor-pointer",
             isCollapsed ? "justify-center px-2" : "px-4"
           )}
         >

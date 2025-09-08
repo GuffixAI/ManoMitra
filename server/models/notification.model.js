@@ -43,7 +43,8 @@ const notificationSchema = new mongoose.Schema(
         "training_completed",
         "availability_update",
         "performance_review",
-        "account_verification"
+        "account_verification",
+        "ai_report_ready",
       ]
     },
     title: {

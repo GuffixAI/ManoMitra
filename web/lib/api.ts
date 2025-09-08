@@ -209,3 +209,12 @@ export const conversationAPI = {
   getMyConversations: async () => api.get('/conversations').then(getData),
   getMessagesWithUser: async (userId: string) => api.get(`/conversations/with/${userId}`).then(getData),
 };
+
+export const aiReportAPI = {
+  createReport: async (conversation_history: string) => 
+    api.post('/ai-reports', { conversation_history }).then(res => res.data),
+  getMyReports: async () => 
+    api.get('/ai-reports/my').then(getData),
+  getReportById: async (id: string) => 
+    api.get(`/ai-reports/${id}`).then(getData),
+};

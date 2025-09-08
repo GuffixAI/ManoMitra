@@ -44,7 +44,7 @@ export default function MessagesListPage() {
               return (
                 <Link
                   key={convo._id}
-                  href={`/messages/${otherParticipant._id}`}
+                  href={`/messages/${otherParticipant._id}/${otherParticipant?.role}`}
                   className="block p-4 border rounded-lg hover:bg-muted transition-colors"
                 >
                   <div className="flex items-center space-x-4">

@@ -14,14 +14,175 @@ from ..tools.search_tools import all_tools
 from ..schemas.demo_report import DemoReport, HelpfulResources as DemoResources, Resource as DemoResource
 from ..schemas.standard_report import StandardReport, RiskAssessment, ScreeningScores, CounselorRecommendations, RecommendedResource, ClinicalAnalytics
 from ..utils.logger import get_logger
+import re
+from urllib.parse import urlparse
+
 
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 logger = get_logger(__name__)
 
 # Use a more capable model for analysis and generation
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 
 # ---------------- Pydantic Output Models for Agents ---------------- #
+
+URL_REGEX = re.compile(r"https?://[^\s)\]}>,]+", re.IGNORECASE)
+
+def _ensure_list(x):
+    return x if isinstance(x, list) else ([] if x is None else [x])
+
+def _domain(url: str) -> str:
+    try:
+        return urlparse(url).netloc
+    except Exception:
+        return ""
+
+def _parse_urls_from_text(text: str):
+    if not isinstance(text, str):
+        return []
+    return URL_REGEX.findall(text)
+
+def _parse_youtube_result(raw) -> List[Dict[str, Any]]:
+    """Normalize YouTube tool outputs into [{title,url,description,type,source_tool}]"""
+    print("[parse_youtube] raw type:", type(raw))
+    results: List[Dict[str, Any]] = []
+
+    # Common: agent returns dict with 'output' and 'intermediate_steps'
+    if isinstance(raw, dict):
+        # 1) If tool returned a structured list directly
+        if isinstance(raw.get("results"), list):
+            for item in raw["results"]:
+                url = item.get("link") or item.get("url") or ""
+                title = item.get("title") or item.get("name") or "Untitled"
+                desc = item.get("description") or item.get("content") or ""
+                if url and ("youtube.com" in url or "youtu.be" in url):
+                    results.append({
+                        "title": title,
+                        "url": url,
+                        "description": desc,
+                        "type": "video",
+                        "source_tool": "youtube_search",
+                    })
+        # 2) Fallback: parse any URLs in 'output' text
+        out = raw.get("output")
+        if isinstance(out, str):
+            for url in _parse_urls_from_text(out):
+                if "youtube.com" in url or "youtu.be" in url:
+                    results.append({
+                        "title": "YouTube Video",
+                        "url": url,
+                        "description": "",
+                        "type": "video",
+                        "source_tool": "youtube_search",
+                    })
+        # 3) Try to mine intermediate steps text for links (if present)
+        for step in _ensure_list(raw.get("intermediate_steps")):
+            if isinstance(step, (list, tuple)) and len(step) >= 2:
+                obs = step[1]
+                if isinstance(obs, str):
+                    for url in _parse_urls_from_text(obs):
+                        if "youtube.com" in url or "youtu.be" in url:
+                            results.append({
+                                "title": "YouTube Video",
+                                "url": url,
+                                "description": "",
+                                "type": "video",
+                                "source_tool": "youtube_search",
+                            })
+
+    elif isinstance(raw, list):
+        # Some tools return a list of dicts directly
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            url = item.get("link") or item.get("url") or ""
+            title = item.get("title") or item.get("name") or "Untitled"
+            desc = item.get("description") or item.get("content") or ""
+            if url and ("youtube.com" in url or "youtu.be" in url):
+                results.append({
+                    "title": title,
+                    "url": url,
+                    "description": desc,
+                    "type": "video",
+                    "source_tool": "youtube_search",
+                })
+
+    elif isinstance(raw, str):
+        # Plain text: extract links
+        for url in _parse_urls_from_text(raw):
+            if "youtube.com" in url or "youtu.be" in url:
+                results.append({
+                    "title": "YouTube Video",
+                    "url": url,
+                    "description": "",
+                    "type": "video",
+                    "source_tool": "youtube_search",
+                })
+
+    print(f"[parse_youtube] parsed {len(results)} items")
+    return results
+
+
+def _parse_tavily_result(raw) -> List[Dict[str, Any]]:
+    """Normalize Tavily outputs into [{title,url,description,type,source_tool}]"""
+    print("[parse_tavily] raw type:", type(raw))
+    results: List[Dict[str, Any]] = []
+
+    if isinstance(raw, dict):
+        if isinstance(raw.get("results"), list):
+            for item in raw["results"]:
+                url = item.get("url") or ""
+                title = item.get("title") or "Untitled"
+                desc = item.get("content") or item.get("raw_content") or ""
+                if url:
+                    results.append({
+                        "title": title,
+                        "url": url,
+                        "description": desc,
+                        "type": "article",
+                        "source_tool": "tavily_search",
+                    })
+        # Also parse any urls in 'answer'/'output'
+        for key in ("answer", "output"):
+            if isinstance(raw.get(key), str):
+                for url in _parse_urls_from_text(raw[key]):
+                    results.append({
+                        "title": "Web Resource",
+                        "url": url,
+                        "description": "",
+                        "type": "article",
+                        "source_tool": "tavily_search",
+                    })
+
+    elif isinstance(raw, list):
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            url = item.get("url") or ""
+            title = item.get("title") or "Untitled"
+            desc = item.get("content") or item.get("raw_content") or ""
+            if url:
+                results.append({
+                    "title": title,
+                    "url": url,
+                    "description": desc,
+                    "type": "article",
+                    "source_tool": "tavily_search",
+                })
+
+    elif isinstance(raw, str):
+        for url in _parse_urls_from_text(raw):
+            results.append({
+                "title": "Web Resource",
+                "url": url,
+                "description": "",
+                "type": "article",
+                "source_tool": "tavily_search",
+            })
+
+    print(f"[parse_tavily] parsed {len(results)} items")
+    return results
+
 
 class SentimentRiskOutput(BaseModel):
     """Structured output for Sentiment and Risk Analysis."""
@@ -110,110 +271,220 @@ async def conversation_summarizer_agent(state: AgentState) -> Dict[str, Any]:
     logger.info(f"Summarization complete.")
     return state
 
+# ---------------- Resource Retrieval Agent ---------------- #
+
 async def resource_retrieval_agent(state: AgentState) -> Dict[str, Any]:
     logger.info("Running Resource Retrieval Agent...")
+    print("\n[retriever] START ------------------------------------")
     topics = state["summary"].suggested_resource_topics
-    all_found_resources = []
+    print(f"[retriever] topics ({len(topics)}): {topics}")
 
-    # Use a set to avoid duplicate URLs
-    seen_urls = set()
+    # Map tools by name for direct calls
+    tool_map = {t.name: t for t in all_tools}
+    print(f"[retriever] available tools: {list(tool_map.keys())}")
 
-    # FIX: Create a prompt with the required 'agent_scratchpad' variable
-    search_prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", "You are a helpful research assistant."),
-            ("user", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
-    
-    agent = create_tool_calling_agent(llm, all_tools, search_prompt)
-    executor = AgentExecutor(agent=agent, tools=all_tools, verbose=True)
+    yt_tool = tool_map.get("youtube_search")
+    tavily_tool = tool_map.get("tavily_search")
 
-    # 1. Search for Videos and Audio
-    video_query = f"Find helpful YouTube videos about: {', '.join(topics)}"
-    video_results = await executor.ainvoke({"input": video_query})
-    # Process and add results... (This part needs parsing logic based on tool output)
+    all_resources: List[Dict[str, Any]] = []
+    seen_urls: set[str] = set()
 
-    # 2. Search for Articles and Guides
-    article_query = f"Find practical articles, guides, and coping strategies for: {', '.join(topics)}"
-    article_results = await executor.ainvoke({"input": article_query})
-    # Process and add results...
+    # Helper to insert with dedupe + prints
+    def _add_resources(tag: str, items: List[Dict[str, Any]], topic: str):
+        print(f"[retriever] adding {len(items)} {tag} items for topic '{topic}'")
+        added = 0
+        for r in items:
+            url = (r.get("url") or "").strip()
+            if not url:
+                continue
+            if url in seen_urls:
+                print(f"[retriever] skip duplicate: {url}")
+                continue
+            r["source_topic"] = topic
+            all_resources.append(r)
+            seen_urls.add(url)
+            added += 1
+        print(f"[retriever] added {added}/{len(items)} new items (unique so far: {len(seen_urls)})")
 
-    # For this example, we will use the simplified output from your log for brevity
-    # In a real implementation, you would parse the output of each executor call
-    retrieved_content = your_original_retrieved_content_from_the_log # Placeholder
-    
-    state["retrieved_resources"] = [{"title": "Retrieved Resources", "content": retrieved_content}] # Simplified for example
+    # Query per topic
+    for idx, topic in enumerate(topics):
+        print(f"\n[retriever] === Topic {idx+1}/{len(topics)}: '{topic}' ===")
+
+        # ---- YouTube (videos) ----
+        if yt_tool is not None:
+            yt_query = f"{topic},5"  # required format: "query,NUM"
+            print(f"[retriever][youtube] query: {yt_query}")
+            try:
+                yt_raw = await yt_tool.ainvoke(yt_query)
+                print("[retriever][youtube] RAW:", yt_raw)
+                yt_parsed = _parse_youtube_result(yt_raw)
+                print("[retriever][youtube] PARSED:", yt_parsed)
+                _add_resources("youtube", yt_parsed, topic)
+            except Exception as e:
+                logger.error(f"YouTube retrieval error for '{topic}': {e}")
+                print(f"[retriever][youtube] ERROR: {e}")
+        else:
+            print("[retriever][youtube] tool not available")
+
+        # ---- Tavily (articles) ----
+        if tavily_tool is not None:
+            tavily_query = {"query": topic, "include_images": False}
+            print(f"[retriever][tavily] query: {tavily_query}")
+            try:
+                tavily_raw = await tavily_tool.ainvoke(tavily_query)
+                print("[retriever][tavily] RAW:", tavily_raw)
+                tavily_parsed = _parse_tavily_result(tavily_raw)
+                print("[retriever][tavily] PARSED:", tavily_parsed)
+                _add_resources("tavily", tavily_parsed, topic)
+            except Exception as e:
+                logger.error(f"Tavily retrieval error for '{topic}': {e}")
+                print(f"[retriever][tavily] ERROR: {e}")
+        else:
+            print("[retriever][tavily] tool not available")
+
+    print(f"\n[retriever] total unique resources collected: {len(all_resources)}")
+    # Persist as-is (no static fallbacks)
+    state["retrieved_resources"] = all_resources
     logger.info("Resource Retrieval complete.")
+    print("[retriever] END --------------------------------------\n")
     return state
+
+# ---------------- Report Generator Agent ---------------- #
 
 def report_generator(state: AgentState) -> Dict[str, Any]:
     logger.info("Running Report Generator Agent...")
-    
-    # Data from state
-    summary = state["summary"]
-    risk = state["sentiment_risk"]
-    scores = state["screening_scores"]
-    # Assuming retrieved_resources is populated correctly in a real scenario
-    resources_raw = state.get("retrieved_resources", [{"content": ""}])[0]['content']
+    print("\n[report] START ---------------------------------------")
+
+    summary: SummaryOutput = state["summary"]
+    risk: SentimentRiskOutput = state["sentiment_risk"]
+    scores: ScreeningScoresOutput = state["screening_scores"]
+
+    print("[report] summary:", summary)
+    print("[report] risk:", risk)
+    print("[report] scores:", scores)
+
+    raw_resources: List[Dict[str, Any]] = state.get("retrieved_resources") or []
+    print(f"[report] raw_resources count: {len(raw_resources)}")
+    print("[report] raw_resources sample (up to 3):", raw_resources[:3])
+
+    # Group resources
+    videos_raw = [r for r in raw_resources if r.get("type") == "video"]
+    articles_raw = [r for r in raw_resources if r.get("type") == "article"]
+    print(f"[report] videos_raw: {len(videos_raw)}  articles_raw: {len(articles_raw)}")
+
+    # Convert to DemoResource objects
+    def _to_demo_resource(r: Dict[str, Any]) -> DemoResource:
+        return DemoResource(
+            title=(r.get("title") or "Untitled"),
+            url=(r.get("url") or ""),
+            description=(r.get("description") or ""),
+        )
+
+    videos = [_to_demo_resource(r) for r in videos_raw]
+    articles = [_to_demo_resource(r) for r in articles_raw]
+
+    print(f"[report] videos for demo: {len(videos)}")
+    for i, v in enumerate(videos[:3]):
+        print(f"[report] video[{i}]:", v)
+
+    print(f"[report] articles for demo: {len(articles)}")
+    for i, a in enumerate(articles[:3]):
+        print(f"[report] article[{i}]:", a)
+
+    # Build HelpfulResources from dynamic data ONLY (no static)
+    demo_resources = DemoResources(
+        videos_and_audio=videos,
+        articles_and_guides=articles,
+        on_campus_support=[],  # kept empty since you requested zero static data
+    )
+
+    # Dynamic key takeaways from stressors
+    key_takes = [f"Addressing feelings around {s.lower()}" for s in summary.key_stressors]
+    print("[report] key_takeaways:", key_takes)
+
+    # Dynamic suggested first steps based on what's available
+    first_steps: List[str] = []
+    if videos:
+        first_steps.append("Pick one short video from the list and try it today.")
+    if articles:
+        first_steps.append("Open one article below and note 1–2 ideas to try this week.")
+    # Always include a self-reg step; still dynamic wording
+    first_steps.append("Try a 2-minute breathing break when emotions spike.")
+
+    print("[report] suggested_first_steps:", first_steps)
 
     # ---- Build Demo Report (Student-Facing) ----
     demo_report = DemoReport(
         student_summary=summary.chat_summary_student,
-        key_takeaways=[f"Addressing feelings around {s.lower()}" for s in summary.key_stressors],
-        suggested_first_steps=[
-            "Take a moment for yourself with a short, guided breathing exercise.",
-            "Browse one of the articles below that feels most relevant to you right now.",
-            "Consider scheduling a confidential chat with a campus counselor. It's a free and supportive service."
-        ],
-        helpful_resources=DemoResources(
-            videos_and_audio=[DemoResource(title="5-Minute Meditation", url="https://youtube.com/...", description="A short video to help calm your mind when you feel overwhelmed.")],
-            articles_and_guides=[DemoResource(title="Coping with Exam Stress", url="https://helpguide.org/...", description="An article with practical tips for managing stress during exam season.")],
-            on_campus_support=[DemoResource(title="Book a Counselor Appointment", url="https://yourcollege.edu/counseling", description="Your link to schedule a private session with a professional counselor on campus.")]
+        key_takeaways=key_takes,
+        suggested_first_steps=first_steps,
+        helpful_resources=demo_resources,
+        message_of_encouragement=(
+            "You took a real step by talking about this. Be gentle with yourself; small actions count."
         ),
-        message_of_encouragement="Please remember, it's okay to not be okay, and reaching out for support is a sign of strength. You've already taken a positive step. We're here to help."
+    )
+    print("[report] demo_report constructed.")
+
+    # ---- Counselor-facing: derive recommendations from retrieved resources ----
+    # Use top articles (up to 5) as recommended resources; fall back to videos if no articles
+    counselor_source_pool = articles_raw if articles_raw else videos_raw
+    print(f"[report] counselor_source_pool size: {len(counselor_source_pool)} (articles first, else videos)")
+
+    recs = []
+    for r in counselor_source_pool[:5]:
+        recs.append(
+            RecommendedResource(
+                category=("Article" if r.get("type") == "article" else "Video"),
+                title=(r.get("title") or "Untitled"),
+                url=(r.get("url") or ""),
+                relevance=f"Matches topics: {', '.join(summary.suggested_resource_topics)}; domain: {_domain(r.get('url',''))}",
+                source_tool=(r.get("source_tool") or "unknown"),
+            )
+        )
+    print(f"[report] counselor recommended_resources: {len(recs)}")
+
+    # Dynamic suggested next steps from stressors + available resources
+    dynamic_steps: List[str] = []
+    for s in summary.key_stressors[:3]:
+        dynamic_steps.append(f"Explore stressor: {s} and its impact on daily functioning.")
+    if videos_raw or articles_raw:
+        dynamic_steps.append(
+            f"Share {len(videos_raw)} video(s) and {len(articles_raw)} article(s) aligned to: {', '.join(summary.suggested_resource_topics)}."
+        )
+    # Tie to screening data
+    dynamic_steps.append(
+        f"Monitor symptoms consistent with PHQ-9={scores.phq_9_score}, GAD-7={scores.gad_7_score}; consider follow-up screening in 2–4 weeks."
     )
 
-    # ---- Build Standard Report (Counselor-Facing) ----
+    print("[report] counselor suggested_next_steps:", dynamic_steps)
+
     standard_report = StandardReport(
         chat_summary=summary.chat_summary_clinical,
         risk_assessment=RiskAssessment(**risk.dict()),
         screening_scores=ScreeningScores(**scores.dict()),
         counselor_recommendations=CounselorRecommendations(
-            recommended_resources=[
-                RecommendedResource(
-                    category="Psychoeducational Guide",
-                    title="HelpGuide.org: A trusted guide to mental health",
-                    url="https://www.helpguide.org/",
-                    relevance="Provides evidence-based, easy-to-understand information on anxiety, stress, and sleep issues that can be shared with the student.",
-                    source_tool="tavily_search"
-                ),
-                RecommendedResource(
-                    category="University Mental Health Portal",
-                    title="Georgia Tech Self-Help Resources",
-                    url="https://mentalhealth.gatech.edu/resources/students/self-help-resources",
-                    relevance="Example of a well-structured university resource hub for student self-help.",
-                    source_tool="tavily_search"
-                )
-            ],
-            suggested_next_steps=[
-                "Prioritize student for outreach due to high GAD-7 score and expressed feelings of isolation.",
-                "In initial session, explore the theme of 'fear of failure' and its connection to academic pressure.",
-                "Introduce psychoeducation on the connection between anxiety, sleep disruption, and concentration."
-            ]
+            recommended_resources=recs,
+            suggested_next_steps=dynamic_steps,
         ),
         analytics=ClinicalAnalytics(
             key_stressors_identified=summary.key_stressors,
-            potential_underlying_issues=["Perfectionism", "Imposter Syndrome", "Lack of effective study/coping strategies"]
+            potential_underlying_issues=[
+                # purely illustrative and dynamic-friendly suggestions; feel free to adjust upstream
+                "Cognitive distortions related to loss/achievement",
+                "Sleep disturbance impacting concentration",
+                "Reduced social support/connectedness",
+            ],
         ),
-        report_generated_at=datetime.utcnow()
+        report_generated_at=datetime.utcnow(),
     )
+    print("[report] standard_report constructed.")
 
     state["final_report"] = {
         "demo_report": demo_report.dict(),
-        "standard_report": standard_report.dict()
+        "standard_report": standard_report.dict(),
     }
+    print("[report] final_report keys:", list(state["final_report"].keys()))
+    print("[report] END -----------------------------------------\n")
     return state
 
 # ---------------- Graph Orchestration (Same as before) ---------------- #

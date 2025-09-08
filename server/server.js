@@ -110,6 +110,7 @@ import feedbackRoutes from "./routes/feedback.routes.js";
 import roomRoutes from "./routes/room.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
+import aiReportRoutes from "./routes/aiReport.routes.js";
 
 app.use("/api/students", studentRoutes);
 app.use("/api/counsellors", counsellorRoutes);
@@ -122,6 +123,7 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
+app.use("/api/ai-reports", aiReportRoutes); 
 
 // Fallbacks
 app.use(notFound);
@@ -143,8 +145,6 @@ const io = new Server(server, {
 // Peer support namespace with enhanced features
 const peer = io.of("/peer");
 
-// BUG FIX: Middleware moved from `io.use()` to `peer.use()`
-// This ensures authentication runs specifically for the /peer namespace.
 peer.use((socket, next) => {
   const token = socket.handshake.auth?.token;
 

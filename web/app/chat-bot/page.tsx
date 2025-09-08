@@ -30,7 +30,6 @@ import {
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { Loader } from "@/components/ai-elements/loader";
-import Link from "next/link";
 import { Loader2, CheckCircle2, CopyCheckIcon } from "lucide-react";
 import { motion } from "motion/react";
 import {
@@ -39,10 +38,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
+import { useCreateAIReport } from "@/hooks/api/useAIReports";
 
 const ChatInterface = () => {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status } = useChat();
+  const router = useRouter();
+  const createReportMutation = useCreateAIReport();
 
   const [reportLoading, setReportLoading] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -62,6 +65,7 @@ const ChatInterface = () => {
     "Summarizing your conversation…",
     "Finding helpful resources…",
     "Preparing your report…",
+    "Redirectig to the report page....",
   ];
 
   const handleGenerateReport = (e: React.FormEvent) => {
@@ -70,6 +74,30 @@ const ChatInterface = () => {
     setReportLoading(true);
     setOpenModal(true);
     setCurrentStep(0);
+
+    const conversationText = messages
+      .map((m) => {
+        const textPart = m.parts.find((part) => part.type === "text");
+        const content = textPart ? textPart.text : "";
+
+        if (content) {
+          const speaker = m.role === "user" ? "Student" : "Chatbot";
+          return `${speaker}: ${content}`;
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .join("\n\n");
+
+    createReportMutation.mutate(conversationText, {
+      onSuccess: (response) => {
+        const newReportId = response.data._id;
+        setReportLoading(false);
+        setOpenModal(false);
+        setCurrentStep(5);
+        router.push(`/student/ai-reports/${newReportId}`);
+      },
+    });
   };
 
   // Auto-progress steps
@@ -86,7 +114,7 @@ const ChatInterface = () => {
       setTimeout(() => {
         setReportLoading(false);
         setOpenModal(false);
-      }, 1500);
+      }, 6000);
     }
   }, [reportLoading, currentStep]);
 
@@ -183,17 +211,26 @@ const ChatInterface = () => {
               />
               <PromptInputToolbar className="px-3 py-2">
                 <PromptInputSubmit
-                  disabled={!input || reportLoading}
+                  disabled={
+                    !input || reportLoading || createReportMutation.isPending
+                  }
                   status={status}
                   className="cursor-pointer"
                 />
                 {messages.length > -1 && (
                   <button
-                    disabled={reportLoading}
+                    disabled={reportLoading || createReportMutation.isPending}
                     onClick={handleGenerateReport}
                     className="rounded-lg bg-white text-gray-800 shadow-md hover:bg-gray-200 px-4 py-2 cursor-pointer"
                   >
-                    <small>Generate Report</small>
+                    {createReportMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Report"
+                    )}
                   </button>
                 )}
               </PromptInputToolbar>
@@ -202,13 +239,31 @@ const ChatInterface = () => {
         </div>
       </div>
 
-      <Dialog open={openModal} onOpenChange={setOpenModal}>
+      <Dialog
+        open={openModal}
+        onOpenChange={(val) => {
+          // Prevent closing while generating
+          if (!reportLoading) setOpenModal(val);
+        }}
+      >
         <DialogContent className="sm:max-w-md rounded-xl shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-center">
               Generating Your Report
             </DialogTitle>
           </DialogHeader>
+
+          {/* Progress bar */}
+          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mt-2">
+            <motion.div
+              className="h-2 bg-blue-500"
+              initial={{ width: 0 }}
+              animate={{
+                width: `${((currentStep + 1) / steps.length) * 100}%`,
+              }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
 
           <div className="space-y-4 py-6">
             {steps.map((step, i) => {
