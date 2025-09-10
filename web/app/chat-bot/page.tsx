@@ -17,7 +17,7 @@ import { Action, Actions } from "@/components/ai-elements/actions";
 import React, { useEffect, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { Response } from "@/components/ai-elements/response";
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, Mic } from "lucide-react";
 import {
   Source,
   Sources,
@@ -162,13 +162,24 @@ const ChatInterface = () => {
                           {message.role === "assistant" &&
                             i === messages.length - 1 && (
                               <Actions className="mt-2">
-                                <Action
+                                <Action className="cursor-pointer"
                                   onClick={() =>
                                     navigator.clipboard.writeText(part.text)
                                   }
                                   label="Copy"
                                 >
                                   <CopyIcon className="size-3" />
+                                </Action>
+                                <Action className="cursor-pointer"
+                                  onClick={() => {
+                                    const utterance =
+                                      new SpeechSynthesisUtterance(part.text);
+                                    utterance.lang = "en-US";
+                                    window.speechSynthesis.speak(utterance);
+                                  }}
+                                  label="Listen"
+                                >
+                                  <Mic className="size-3" />
                                 </Action>
                               </Actions>
                             )}
@@ -217,19 +228,18 @@ const ChatInterface = () => {
                   status={status}
                   className="cursor-pointer"
                 />
-                {messages.length > -1 && (
+                {messages.length > 10 && (
                   <button
                     disabled={reportLoading || createReportMutation.isPending}
                     onClick={handleGenerateReport}
-                    className="rounded-lg bg-white text-gray-800 shadow-md hover:bg-gray-200 px-4 py-2 cursor-pointer"
+                    className="rounded-lg bg-white text-gray-800 flex gap-2 shadow-md hover:bg-gray-200 px-4 py-2 cursor-pointer"
                   >
                     {createReportMutation.isPending ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> <small><b>Generating...</b></small>
                       </>
                     ) : (
-                      "Generate Report"
+                      <small> <b>Generate Report</b> </small>
                     )}
                   </button>
                 )}
@@ -242,7 +252,6 @@ const ChatInterface = () => {
       <Dialog
         open={openModal}
         onOpenChange={(val) => {
-          // Prevent closing while generating
           if (!reportLoading) setOpenModal(val);
         }}
       >

@@ -266,6 +266,7 @@ export class GeminiWebSocket {
     }
   }
 
+
   disconnect() {
     this.isSetupComplete = false;
     if (this.ws) {

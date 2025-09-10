@@ -60,6 +60,7 @@ export default function Home() {
 
   const handleTranscription = useCallback((transcription: string) => {
     setMessages((prev) => [...prev, { type: "gemini", text: transcription }]);
+
   }, []);
 
   const steps = [
@@ -106,7 +107,7 @@ export default function Home() {
         <div className="flex-shrink-0">
           <CameraPreview onTranscription={handleTranscription} />
 
-          {messages.length > -1 && (
+          {messages.length > 10 && (
             <button
               disabled={conLoading}
               onClick={handleConGenerateReport}

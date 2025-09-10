@@ -8,6 +8,10 @@ import { Video, VideoOff } from "lucide-react";
 import { GeminiWebSocket } from '../services/geminiWebSocket';
 import { Base64 } from 'js-base64';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+4
+
+import { TranscriptionService } from "../services/transcriptionService";
+import { pcmToWav } from '../utils/audioUtils';
 
 interface CameraPreviewProps {
   onTranscription: (text: string) => void;
@@ -197,7 +201,7 @@ export default function CameraPreview({ onTranscription }: CameraPreviewProps) {
         });
 
         const source = ctx.createMediaStreamSource(stream);
-        audioWorkletNodeRef.current.port.onmessage = (event) => {
+        audioWorkletNodeRef.current.port.onmessage = async(event) => {
           if (!isActive || isModelSpeaking) return;
           const { pcmData, level } = event.data;
           setAudioLevel(level);
