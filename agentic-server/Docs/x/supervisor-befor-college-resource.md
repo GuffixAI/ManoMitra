@@ -16,18 +16,10 @@ from ..schemas.standard_report import StandardReport, RiskAssessment, ScreeningS
 from ..utils.logger import get_logger
 import re
 from urllib.parse import urlparse
-import httpx # NEW: For making HTTP requests to your backend
-from dotenv import load_dotenv # NEW: To load BACKEND_API_URL
 
-# Load environment variables (ensure this is done once, could be in app/config.py)
-load_dotenv()
 
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 logger = get_logger(__name__)
-
-# NEW: Retrieve your Node.js backend API URL from environment variables
-BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:5000/api")
-
 
 # Use a more capable model for analysis and generation
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
@@ -279,87 +271,40 @@ async def conversation_summarizer_agent(state: AgentState) -> Dict[str, Any]:
     logger.info(f"Summarization complete.")
     return state
 
-# NEW/UPDATED: Resource Retrieval Agent
+# ---------------- Resource Retrieval Agent ---------------- #
+
 async def resource_retrieval_agent(state: AgentState) -> Dict[str, Any]:
     logger.info("Running Resource Retrieval Agent...")
     print("\n[retriever] START ------------------------------------")
     topics = state["summary"].suggested_resource_topics
-    # TODO: Dynamically get student's preferred language from user profile if available
-    student_language = "en" # Placeholder for now
+    print(f"[retriever] topics ({len(topics)}): {topics}")
 
-    all_resources: List[Dict[str, Any]] = []
-    seen_urls: set[str] = set()
-
-    # Helper to insert with dedupe + prints. Modified to accept file_url.
-    def _add_resources(tag: str, items: List[Dict[str, Any]], topic: str):
-        print(f"[retriever] adding {len(items)} {tag} items for topic '{topic}'")
-        added = 0
-        for r in items:
-            url_to_check = (r.get("file_url") or r.get("url") or "").strip() # Prioritize file_url
-            if not url_to_check:
-                continue
-            if url_to_check in seen_urls:
-                print(f"[retriever] skip duplicate: {url_to_check}")
-                continue
-            r["source_topic"] = topic
-            all_resources.append(r)
-            seen_urls.add(url_to_check)
-            added += 1
-        print(f"[retriever] added {added}/{len(items)} new items (unique so far: {len(seen_urls)})")
-
-    # 1. NEW: Retrieve pre-vetted resources from your backend
-    try:
-        logger.info(f"[retriever][internal] Querying backend for topics: {topics}, lang: {student_language}")
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{BACKEND_API_URL}/resources", # Use general resources endpoint for now
-                params={"category": ",".join(topics), "language": student_language, "limit": 5},
-                timeout=10.0 # Add a timeout
-            )
-            response.raise_for_status()
-            internal_resources_raw = response.json().get("data", [])
-            
-            internal_parsed: List[Dict[str, Any]] = []
-            for item in internal_resources_raw:
-                resource_url = item.get("url")
-                file_public_url = None
-                if item.get("file") and item["file"].get("url"):
-                    # Construct full public URL for locally uploaded files
-                    file_public_url = f"{BACKEND_API_URL.replace('/api', '')}{item['file']['url']}"
-                    resource_url = file_public_url # Use file_url as primary if present
-
-                # Map backend resource types to types expected by report generator
-                mapped_type = "article"
-                if item.get("type") in ["video", "audio"]:
-                    mapped_type = "video" # Group audio/video together for demo report
-                
-                if resource_url:
-                    internal_parsed.append({
-                        "title": item.get("title") or "Untitled Internal Resource",
-                        "url": resource_url,
-                        "file_url": file_public_url, # Keep file_url separate if needed later
-                        "description": item.get("description") or "",
-                        "type": mapped_type, # 'video' or 'article' based on mapping
-                        "source_tool": "internal_vetted_db",
-                        "source_topic": item.get("category", [])[0] if item.get("category") else topics[0] # Use first category or main topic
-                    })
-            _add_resources("internal_db", internal_parsed, "Internal Vetted")
-        logger.info(f"[retriever][internal] Retrieved {len(internal_parsed)} resources from internal DB.")
-    except httpx.HTTPStatusError as e:
-        logger.error(f"[retriever][internal] HTTP error querying backend: {e.response.status_code} - {e.response.text}")
-    except httpx.RequestError as e:
-        logger.error(f"[retriever][internal] Request error querying backend: {e}")
-    except Exception as e:
-        logger.error(f"[retriever][internal] General error querying backend: {e}", exc_info=True)
-
-
-    # 2. EXISTING: Query external tools (can be made conditional, e.g., if internal_parsed is empty)
-    
+    # Map tools by name for direct calls
     tool_map = {t.name: t for t in all_tools}
     print(f"[retriever] available tools: {list(tool_map.keys())}")
 
     yt_tool = tool_map.get("youtube_search")
     tavily_tool = tool_map.get("tavily_search")
+
+    all_resources: List[Dict[str, Any]] = []
+    seen_urls: set[str] = set()
+
+    # Helper to insert with dedupe + prints
+    def _add_resources(tag: str, items: List[Dict[str, Any]], topic: str):
+        print(f"[retriever] adding {len(items)} {tag} items for topic '{topic}'")
+        added = 0
+        for r in items:
+            url = (r.get("url") or "").strip()
+            if not url:
+                continue
+            if url in seen_urls:
+                print(f"[retriever] skip duplicate: {url}")
+                continue
+            r["source_topic"] = topic
+            all_resources.append(r)
+            seen_urls.add(url)
+            added += 1
+        print(f"[retriever] added {added}/{len(items)} new items (unique so far: {len(seen_urls)})")
 
     # Query per topic
     for idx, topic in enumerate(topics):
@@ -424,7 +369,7 @@ def report_generator(state: AgentState) -> Dict[str, Any]:
 
     # Group resources
     videos_raw = [r for r in raw_resources if r.get("type") == "video"]
-    articles_raw = [r for r in raw_resources if r.get("type") == "article"] # This will now include 'document' and 'audio' if mapped this way
+    articles_raw = [r for r in raw_resources if r.get("type") == "article"]
     print(f"[report] videos_raw: {len(videos_raw)}  articles_raw: {len(articles_raw)}")
 
     # Convert to DemoResource objects
@@ -450,7 +395,7 @@ def report_generator(state: AgentState) -> Dict[str, Any]:
     demo_resources = DemoResources(
         videos_and_audio=videos,
         articles_and_guides=articles,
-        on_campus_support=[],  # kept empty since you requested zero static data, to be filled via admin settings
+        on_campus_support=[],  # kept empty since you requested zero static data
     )
 
     # Dynamic key takeaways from stressors
@@ -561,3 +506,8 @@ def build_graph():
     return workflow.compile()
 
 graph_app = build_graph()
+
+# Placeholder for the resource content from your original log for the generator function
+your_original_retrieved_content_from_the_log = """
+Here are some resources... (the full text blob from your log)
+"""

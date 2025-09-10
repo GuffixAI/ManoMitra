@@ -1,0 +1,10 @@
+fastapi[standard]
+uvicorn
+pymongo
+python-dotenv
+pandas
+langgraph
+langchain-google-genai
+langchain-core
+numpy
+langchain-community

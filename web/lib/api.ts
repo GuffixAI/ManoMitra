@@ -10,6 +10,8 @@ import {
   Volunteer,
   Admin
 } from '@/types/auth';
+// import { AnalyticsSnapshot } from '@/types/analytics'; // You'll create this type in the frontend later
+import { AnalyticsSnapshot, TriggerAnalyticsResponse, FetchAnalyticsResponse, FetchAnalyticsVersionsResponse } from '@/types/analytics';
 
 // Helper to consistently extract data from response
 const getData = (res: any) => res.data.data;
@@ -123,6 +125,36 @@ export const adminAPI = {
   getAllCounsellors: async (params?: any) => api.get('/admin/users/counsellors', { params }).then(getData),
   getAllVolunteers: async (params?: any) => api.get('/admin/users/volunteers', { params }).then(res => res.data),
   createCounsellor: async (data: any) => api.post('/admin/users/counsellors', data).then(res => res.data),
+
+
+
+
+
+
+
+  //   // NEW: Trigger advanced analytics generation
+  // triggerAdvancedAnalytics: async (period_start?: string, period_end?: string, filters?: any) => {
+  //   return api.post('/admin/analytics/generate', { period_start, period_end, filters }).then(res => res.data);
+  // },
+  // // NEW: Get the latest advanced analytics snapshot
+  // getLatestAdvancedAnalytics: async () => api.get('/admin/analytics/advanced/latest').then(getData),
+  // // NEW: Get a specific advanced analytics snapshot by its ID
+  // getAdvancedAnalyticsById: async (snapshotId: string) => api.get(`/admin/analytics/advanced/${snapshotId}`).then(getData),
+  // // NEW: Get a list of all available snapshot versions
+  // getAllAnalyticsVersions: async () => api.get('/admin/analytics/advanced/versions').then(getData),
+
+
+    // NEW: Trigger advanced analytics generation
+  triggerAdvancedAnalytics: async (period_start?: string, period_end?: string, filters?: any): Promise<TriggerAnalyticsResponse> => {
+    const response = await api.post('/admin/analytics/generate', { period_start, period_end, filters });
+    return response.data;
+  },
+  // NEW: Get the latest advanced analytics snapshot
+  getLatestAdvancedAnalytics: async (): Promise<FetchAnalyticsResponse> => api.get('/admin/analytics/advanced/latest').then(res => res.data),
+  // NEW: Get a specific advanced analytics snapshot by its ID
+  getAdvancedAnalyticsById: async (snapshotId: string): Promise<FetchAnalyticsResponse> => api.get(`/admin/analytics/advanced/${snapshotId}`).then(res => res.data),
+  // NEW: Get a list of all available snapshot versions
+  getAllAnalyticsVersions: async (): Promise<FetchAnalyticsVersionsResponse> => api.get('/admin/analytics/advanced/versions').then(res => res.data),
   
 };
 
@@ -217,4 +249,17 @@ export const aiReportAPI = {
     api.get('/ai-reports/my').then(getData),
   getReportById: async (id: string) => 
     api.get(`/ai-reports/${id}`).then(getData),
+};
+
+export const psychoeducationalResourceAPI = {
+  createResource: async (data: FormData) => api.post('/resources', data, {
+    headers: { 'Content-Type': 'multipart/form-data' } // Important for file uploads
+  }).then(res => res.data),
+  getAllResources: async (params?: any) => api.get('/resources', { params }).then(res => res.data),
+  getResourceById: async (id: string) => api.get(`/resources/${id}`).then(res => res.data),
+  updateResource: async (id: string, data: FormData) => api.put(`/resources/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(res => res.data),
+  deleteResource: async (id: string) => api.delete(`/resources/${id}`).then(res => res.data),
+  getRecommended: async (topics: string[], language: string = 'en') => api.get('/resources/recommended', { params: { topics: topics.join(','), language } }).then(res => res.data),
 };

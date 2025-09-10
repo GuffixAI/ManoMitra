@@ -16,7 +16,19 @@ import {
   createCounsellor ,
   getProfile,
   updateProfile,
-  sendSystemNotification
+  sendSystemNotification,
+
+
+
+
+
+
+
+
+    triggerAdvancedAnalyticsGeneration, // NEW
+  getLatestAdvancedAnalyticsSnapshot, // NEW
+  getAdvancedAnalyticsSnapshotById,   // NEW
+  getAllAnalyticsSnapshotVersions,    // NEW
 } from "../controllers/admin.controller.js";
 import { ROLES } from "../constants/roles.js";
 
@@ -47,5 +59,24 @@ router.patch("/reports/assign", assignReport);
 // Emergency access (requires special permission)
 router.post("/emergency", emergencyAccess);
 router.post("/notifications/system", sendSystemNotification);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// NEW: Advanced Analytics Routes
+router.post("/analytics/generate", triggerAdvancedAnalyticsGeneration);
+router.get("/analytics/advanced/latest", getLatestAdvancedAnalyticsSnapshot);
+router.get("/analytics/advanced/versions", getAllAnalyticsSnapshotVersions);
+router.get("/analytics/advanced/:snapshotId", getAdvancedAnalyticsSnapshotById);
 
 export default router;

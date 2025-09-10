@@ -245,6 +245,12 @@ export function Sidebar({ className }: SidebarProps) {
         return [
           ...baseItems,
           {
+            title: "Add Resources",
+            href: "/admin/resources",
+            icon: BookOpen, 
+            badge: null,
+          },
+          {
             title: "Users",
             href: "/admin/users",
             icon: Users,
@@ -256,10 +262,22 @@ export function Sidebar({ className }: SidebarProps) {
             icon: FileText,
             badge: null,
           },
+          // {
+          //   title: "Analytics",
+          //   href: "/admin/analytics",
+          //   icon: BarChart3,
+          //   badge: null,
+          // },
           {
-            title: "Analytics",
-            href: "/admin/analytics",
-            icon: BarChart3,
+            title: "Analytics", // Existing, but will be the new advanced page
+            href: "/admin/analytics", // Keep the same path, just update the content
+            icon: ChartBarBigIcon, // Use a new, distinct icon for Advanced Analytics
+            badge: null,
+          },
+          {
+            title: "Advanced Analytics", // NEW: Entry for advanced analytics
+            href: "/admin/advanced-analytics", // Point to the new page
+            icon: BarChart3, // Using BarChart3 for a distinct icon
             badge: null,
           },
           {

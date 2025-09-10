@@ -10,5 +10,7 @@ mkdir -p logs
 mkdir -p uploads/reports
 mkdir -p uploads/profiles
 mkdir -p uploads/documents
+mkdir -p uploads/resources
 
 echo "Backend directories created successfully!"
+

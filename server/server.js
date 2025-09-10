@@ -28,6 +28,9 @@ import Notification from "./models/notification.model.js";
 
 
 
+import AnalyticsSnapshot from "./models/analyticSnapshot.model.js";// analytic
+
+
 import { devLogging, prodLogging, errorLogging } from './middlewares/logging.middleware.js';
 
 
@@ -111,6 +114,7 @@ import roomRoutes from "./routes/room.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
 import aiReportRoutes from "./routes/aiReport.routes.js";
+import psychoeducationalResourceRoutes from "./routes/psychoeducationalResource.routes.js";
 
 app.use("/api/students", studentRoutes);
 app.use("/api/counsellors", counsellorRoutes);
@@ -124,6 +128,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/ai-reports", aiReportRoutes); 
+app.use("/api/resources", psychoeducationalResourceRoutes);
 
 // Fallbacks
 app.use(notFound);

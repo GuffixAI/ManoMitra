@@ -5,7 +5,7 @@ import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { Admin, User } from "@/types/auth"; 
-
+import { AnalyticsSnapshot, TriggerAnalyticsResponse, FetchAnalyticsVersionsResponse } from '@/types/analytics';
 
 
 export const useAdminDashboardStats = () => {
@@ -153,5 +153,69 @@ export const useAllVolunteers = (params?: any) => {
     queryKey: ["allVolunteers", params],
     // This should be using adminAPI.getAllVolunteers
     queryFn: () => adminAPI.getAllVolunteers(params), 
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// NEW: Hook to trigger advanced analytics generation
+export const useTriggerAdvancedAnalytics = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ period_start, period_end, filters }: { period_start?: string; period_end?: string; filters?: any }) =>
+      adminAPI.triggerAdvancedAnalytics(period_start, period_end, filters),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["latestAdvancedAnalytics"] }); // Refetch latest
+      queryClient.invalidateQueries({ queryKey: ["allAnalyticsVersions"] }); // Refetch versions list
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to trigger analytics generation.");
+    },
+  });
+};
+
+// NEW: Hook to get the latest advanced analytics snapshot
+export const useLatestAdvancedAnalytics = () => {
+  return useQuery<AnalyticsSnapshot>({
+    queryKey: ["latestAdvancedAnalytics"],
+    queryFn: () => adminAPI.getLatestAdvancedAnalytics().then(res => res.data),
+    staleTime: 5 * 60 * 1000, // Analytics are not real-time, can be stale for a bit
+    cacheTime: 10 * 60 * 1000,
+  });
+};
+
+// NEW: Hook to get a specific advanced analytics snapshot by its ID
+export const useAdvancedAnalyticsById = (snapshotId: string) => {
+  return useQuery<AnalyticsSnapshot>({
+    queryKey: ["advancedAnalytics", snapshotId],
+    queryFn: () => adminAPI.getAdvancedAnalyticsById(snapshotId).then(res => res.data),
+    enabled: !!snapshotId, // Only run query if snapshotId is provided
+  });
+};
+
+// NEW: Hook to get a list of all available analytics snapshot versions
+export const useAllAnalyticsVersions = () => {
+  return useQuery<FetchAnalyticsVersionsResponse['data']>({
+    queryKey: ["allAnalyticsVersions"],
+    queryFn: () => adminAPI.getAllAnalyticsVersions().then(res => res.data),
+    staleTime: 5 * 60 * 1000,
   });
 };

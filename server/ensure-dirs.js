@@ -11,6 +11,7 @@ const dirs = [
   'uploads/reports',
   'uploads/profiles', 
   'uploads/documents',
+  'uploads/resources',
   'logs'
 ];
 

@@ -8,6 +8,14 @@ import Booking from "../models/booking.model.js";
 import { ROLES } from "../constants/roles.js";
 import Notification from "../models/notification.model.js";
 
+
+import AnalyticsSnapshot from "../models/analyticSnapshot.model.js";
+import axios from "axios";
+const ANALYTIC_SERVER_URL = process.env.ANALYTIC_SERVER_URL || 'http://localhost:8001';
+
+
+
+
 // ADDED: Get admin profile controller
 export const getProfile = async (req, res) => {
   try {
@@ -603,5 +611,137 @@ export const sendSystemNotification = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// NEW: Admin Controller Functions for Advanced Analytics
+
+// @desc    Admin triggers a new analytics snapshot generation on the Python server
+// @route   POST /api/admin/analytics/generate
+export const triggerAdvancedAnalyticsGeneration = async (req, res) => {
+  try {
+    const { period_start, period_end, filters } = req.body; // Optional date range or filters
+
+    // Make an HTTP POST request to your Python analytic server
+    const pythonServerResponse = await axios.post(
+      `${ANALYTIC_SERVER_URL}/generate-analytics`,
+      { period_start, period_end, filters }
+    );
+
+    // Python server returns success status, snapshot ID, and version
+    if (pythonServerResponse.data.success) {
+      res.status(200).json({
+        success: true,
+        message: pythonServerResponse.data.message,
+        snapshot_id: pythonServerResponse.data.snapshot_id,
+        snapshot_version: pythonServerResponse.data.snapshot_version,
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: pythonServerResponse.data.message || "Failed to generate analytics on Python server.",
+      });
+    }
+  } catch (error) {
+    console.error("Error triggering advanced analytics generation:", error.response?.data || error.message);
+    res.status(500).json({
+      success: false,
+      message: error.response?.data?.detail || error.message || "Internal Server Error during analytics trigger.",
+    });
+  }
+};
+
+// @desc    Retrieves the most recent analytics snapshot
+// @route   GET /api/admin/analytics/advanced/latest
+export const getLatestAdvancedAnalyticsSnapshot = async (req, res) => {
+  try {
+    const latestSnapshot = await AnalyticsSnapshot.findOne()
+      .sort({ snapshotTimestamp: -1 }); // Get the most recent one
+
+    if (!latestSnapshot) {
+      return res.status(404).json({ success: false, message: "No analytics snapshots found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: latestSnapshot,
+    });
+  } catch (error) {
+    console.error("Error fetching latest analytics snapshot:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error." });
+  }
+};
+
+// @desc    Retrieves a specific analytics snapshot by its ID
+// @route   GET /api/admin/analytics/advanced/:snapshotId
+export const getAdvancedAnalyticsSnapshotById = async (req, res) => {
+  try {
+    const { snapshotId } = req.params;
+    const snapshot = await AnalyticsSnapshot.findById(snapshotId);
+
+    if (!snapshot) {
+      return res.status(404).json({ success: false, message: "Analytics snapshot not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: snapshot,
+    });
+  } catch (error) {
+    console.error("Error fetching analytics snapshot by ID:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error." });
+  }
+};
+
+// @desc    Retrieves a list of all available analytics snapshot versions
+// @route   GET /api/admin/analytics/advanced/versions
+export const getAllAnalyticsSnapshotVersions = async (req, res) => {
+  try {
+    const versions = await AnalyticsSnapshot.find({})
+      .select('snapshotVersion snapshotTimestamp periodStart periodEnd') // Only fetch necessary fields
+      .sort({ snapshotTimestamp: -1 }); // Sort by latest first
+
+    res.status(200).json({
+      success: true,
+      data: versions,
+    });
+  } catch (error) {
+    console.error("Error fetching all analytics snapshot versions:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error." });
   }
 };
