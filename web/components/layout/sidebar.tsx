@@ -30,7 +30,8 @@ import {
   BotMessageSquareIcon,
   ChartBarBigIcon,
   BarChart2,
-  BookHeart
+  BookHeart,
+  HeartHandshake
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -293,6 +294,12 @@ export function Sidebar({ className }: SidebarProps) {
             title: "Advanced Analytics", // NEW: Entry for advanced analytics
             href: "/admin/advanced-analytics", // Point to the new page
             icon: BarChart3, // Using BarChart3 for a distinct icon
+            badge: null,
+          },
+          { // NEW
+            title: "Interventions",
+            href: "/admin/interventions",
+            icon: HeartHandshake, // Or another suitable icon
             badge: null,
           },
           {

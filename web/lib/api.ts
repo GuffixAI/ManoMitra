@@ -276,3 +276,10 @@ export const pathwayAPI = {
   markStepComplete: async (pathwayId: string, resourceId: string) => 
     api.patch(`/pathways/${pathwayId}/steps/${resourceId}/complete`).then(res => res.data),
 };
+
+export const interventionAPI = {
+  create: async (data: any) => api.post('/interventions', data).then(res => res.data),
+  getAll: async () => api.get('/interventions').then(getData),
+  update: async (id: string, data: any) => api.put(`/interventions/${id}`, data).then(res => res.data),
+  delete: async (id: string) => api.delete(`/interventions/${id}`).then(res => res.data),
+};

@@ -17,6 +17,34 @@ import {
 import { AnalyticsSnapshot } from "@/types/analytics";
 import { Badge } from "@/components/ui/badge";
 
+import { useGetInterventions } from "@/hooks/api/useInterventions"; // NEW
+import { ChevronsRight } from "lucide-react"; // NEW
+
+const ComparisonCard = ({ title, valueA, valueB, format = (v) => v.toFixed(2) }: { title: string, valueA?: number, valueB?: number, format?: (v: number) => string }) => {
+    const valA = valueA ?? 0;
+    const valB = valueB ?? 0;
+    const change = valB - valA;
+    const changePercent = valA !== 0 ? (change / valA) * 100 : 0;
+    const isPositive = change > 0;
+    const isNegative = change < 0;
+
+    return (
+        <Card className="text-center">
+            <CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader>
+            <CardContent>
+                <div className="flex justify-center items-baseline gap-4">
+                    <span className="text-2xl font-bold">{format(valA)}</span>
+                    <ChevronsRight className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-2xl font-bold">{format(valB)}</span>
+                </div>
+                <div className={`mt-2 font-semibold ${isPositive ? 'text-red-500' : isNegative ? 'text-green-500' : 'text-muted-foreground'}`}>
+                    {change.toFixed(2)} ({changePercent.toFixed(1)}%)
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 // Helper function to prepare data for charts
 const prepareChartData = (data: { [key: string]: number }) => 
@@ -29,9 +57,20 @@ export default function AdminAdvancedAnalyticsPage() {
     const { data: latestAnalytics, isLoading: isLoadingLatest, refetch: refetchLatest } = useLatestAdvancedAnalytics();
     const { data: versionsData, isLoading: isLoadingVersions } = useAllAnalyticsVersions();
 
+
+    const { data: interventions } = useGetInterventions(); // NEW
+
+    // NEW State for comparison
+    const [interventionId, setInterventionId] = useState<string | undefined>();
+    const [snapshotAId, setSnapshotAId] = useState<string | undefined>();
+    const [snapshotBId, setSnapshotBId] = useState<string | undefined>();
+
     const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | undefined>(undefined);
     // Fetch the detailed snapshot if a specific version is selected, otherwise use latest
     const { data: displayedAnalytics, isLoading: isLoadingDisplayed } = useAdvancedAnalyticsById(selectedSnapshotId || "");
+
+    const { data: snapshotA, isLoading: isLoadingA } = useAdvancedAnalyticsById(snapshotAId || "");
+    const { data: snapshotB, isLoading: isLoadingB } = useAdvancedAnalyticsById(snapshotBId || "");
     
     // Use memo to pick the snapshot to display (latest by default, or specific by ID)
     const currentAnalytics: AnalyticsSnapshot | undefined = useMemo(() => {
@@ -52,6 +91,27 @@ export default function AdminAdvancedAnalyticsPage() {
                 toast.error(err.message || "Failed to generate analytics.");
             },
         });
+    };
+
+     const handleInterventionChange = (id: string) => {
+        setInterventionId(id);
+        const intervention = interventions?.find((i: any) => i._id === id);
+        if (!intervention || !versionsData) {
+            setSnapshotAId(undefined);
+            setSnapshotBId(undefined);
+            return;
+        }
+
+        const beforeSnapshots = versionsData
+            .filter((v: any) => dayjs(v.snapshotTimestamp).isBefore(dayjs(intervention.startDate)))
+            .sort((a: any, b: any) => dayjs(b.snapshotTimestamp).diff(dayjs(a.snapshotTimestamp)));
+        
+        const afterSnapshots = versionsData
+            .filter((v: any) => dayjs(v.snapshotTimestamp).isAfter(dayjs(intervention.endDate)))
+            .sort((a: any, b: any) => dayjs(a.snapshotTimestamp).diff(dayjs(b.snapshotTimestamp)));
+
+        setSnapshotAId(beforeSnapshots[0]?._id);
+        setSnapshotBId(afterSnapshots[0]?._id);
     };
 
     const handleVersionChange = (versionId: string) => {
@@ -162,6 +222,39 @@ export default function AdminAdvancedAnalyticsPage() {
                         <p className="text-2xl font-bold">{totalManualReports}</p>
                         <p className="text-muted-foreground">Manual Reports</p>
                     </div>
+                </CardContent>
+            </Card>
+
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Intervention Impact Analysis</CardTitle>
+                    <CardDescription>Measure the impact of an intervention by comparing analytics snapshots before and after.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <Select onValueChange={handleInterventionChange}>
+                        <SelectTrigger className="w-full md:w-1/2">
+                            <SelectValue placeholder="Select an intervention to analyze..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {interventions?.map((item: any) => (
+                                <SelectItem key={item._id} value={item._id}>{item.name} ({dayjs(item.startDate).format("MMM YYYY")})</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    { (isLoadingA || isLoadingB) && <div className="flex justify-center"><Spinner /></div> }
+
+                    { snapshotA && snapshotB && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+                             <ComparisonCard title="Avg GAD-7 Score" valueA={snapshotA.avgGAD7} valueB={snapshotB.avgGAD7} />
+                             <ComparisonCard title="Avg PHQ-9 Score" valueA={snapshotA.avgPHQ9} valueB={snapshotB.avgPHQ9} />
+                             <ComparisonCard title="Students Engaged" valueA={snapshotA.totalStudentsEngaged} valueB={snapshotB.totalStudentsEngaged} format={v => v.toString()}/>
+                        </div>
+                    )}
+                     { interventionId && (!snapshotA || !snapshotB) && !(isLoadingA || isLoadingB) &&
+                        <p className="text-center text-muted-foreground pt-4 border-t">Could not find suitable before/after snapshots for this intervention.</p>
+                     }
                 </CardContent>
             </Card>
 
