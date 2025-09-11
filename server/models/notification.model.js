@@ -45,6 +45,7 @@ const notificationSchema = new mongoose.Schema(
         "performance_review",
         "account_verification",
         "ai_report_ready",
+        "checkin_reminder"
       ]
     },
     title: {

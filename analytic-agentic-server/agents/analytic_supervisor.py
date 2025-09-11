@@ -44,6 +44,8 @@ class AnalyticState(TypedDict):
     period_start: Optional[datetime]
     period_end: Optional[datetime]
     filters_used: Dict[str, Any] # Filters applied when generating this snapshot
+    raw_checkins: List[Dict[str, Any]] # NEW
+    checkins_df: Optional[pd.DataFrame] # NEW
 
 # ---------------- Analytic Agent Functions ---------------- #
 
@@ -68,9 +70,11 @@ async def report_ingestion_agent(state: AnalyticState) -> AnalyticState:
         state["raw_students"] = data_fetcher.fetch_all_students()
         state["raw_counsellors"] = data_fetcher.fetch_all_counsellors()
         state["raw_volunteers"] = data_fetcher.fetch_all_volunteers()
+        state["raw_checkins"] = data_fetcher.fetch_all_checkins(period_start=period_start, end_date=period_end)
 
         logger.info(f"Fetched {len(state['raw_reports'])} manual reports and {len(state['raw_ai_reports'])} AI reports.")
         logger.info(f"Fetched {len(state['raw_students'])} students, {len(state['raw_counsellors'])} counsellors.")
+        logger.info(f"Fetched {len(state['raw_checkins'])} student check-ins.")
     except Exception as e:
         logger.error(f"Error in report_ingestion_agent: {e}", exc_info=True)
         raise
@@ -148,6 +152,18 @@ async def data_preprocessing_agent(state: AnalyticState) -> AnalyticState:
     else:
         state["combined_reports_df"] = pd.DataFrame()
         logger.warning("No reports (manual or AI) to combine.")
+    
+    
+    if state["raw_checkins"]:
+        checkins_df = pd.DataFrame(state["raw_checkins"])
+        checkins_df['createdAt'] = pd.to_datetime(checkins_df['createdAt'])
+        checkins_df['student_id'] = checkins_df['student'].astype(str)
+        checkins_df = checkins_df.drop(columns=['student'], errors='ignore')
+        state["checkins_df"] = checkins_df
+        logger.info(f"Processed {len(checkins_df)} check-ins into DataFrame.")
+    else:
+        state["checkins_df"] = pd.DataFrame()
+        logger.warning("No raw check-in data to preprocess.")
 
     return state
 
@@ -501,6 +517,60 @@ async def db_saver_agent(state: AnalyticState) -> AnalyticState:
 
     return state
 
+
+
+async def predictive_risk_analyzer(state: AnalyticState) -> AnalyticState:
+    """
+    Analyzes check-in data to identify students with concerning wellness trends.
+    """
+    logger.info("Analytic Agent: predictive_risk_analyzer started.")
+    analytic_results = state.get("analytic_results", {})
+    checkins_df = state.get("checkins_df")
+    reports_df = state.get("combined_reports_df")
+
+    proactive_outreach_suggestions = []
+
+    if checkins_df is None or checkins_df.empty:
+        logger.warning("No check-in data available for predictive risk analysis.")
+        analytic_results['proactiveOutreachSuggestions'] = []
+        state["analytic_results"] = analytic_results
+        return state
+
+    # Group by student and analyze trends
+    for student_id, group in checkins_df.groupby('student_id'):
+        group = group.sort_values(by='createdAt')
+        if len(group) >= 3: # Need at least 3 data points for a simple trend
+            # Rule 1: Consistently low mood
+            if group['moodScore'].tail(3).mean() <= 2:
+                suggestion = {
+                    "studentId": student_id,
+                    "riskScore": 0.6,
+                    "justification": f"Consistently low mood score (avg {group['moodScore'].tail(3).mean():.1f}/5) over last 3 check-ins."
+                }
+                proactive_outreach_suggestions.append(suggestion)
+
+            # Rule 2: Persistently high stress
+            if group['stressLevel'].tail(3).mean() >= 4:
+                 suggestion = {
+                    "studentId": student_id,
+                    "riskScore": 0.7,
+                    "justification": f"Persistently high stress level (avg {group['stressLevel'].tail(3).mean():.1f}/5) over last 3 check-ins."
+                }
+                 proactive_outreach_suggestions.append(suggestion)
+    
+    # Cross-reference with high-priority reports if available
+    if reports_df is not None and not reports_df.empty:
+        high_priority_students = reports_df[reports_df['priority'].isin(['high', 'urgent'])]['owner_id'].unique()
+        for suggestion in proactive_outreach_suggestions:
+            if suggestion['studentId'] in high_priority_students:
+                suggestion['riskScore'] = min(suggestion['riskScore'] + 0.2, 1.0) # Boost risk score
+                suggestion['justification'] += " Also submitted a high/urgent priority report."
+
+    analytic_results['proactiveOutreachSuggestions'] = proactive_outreach_suggestions
+    state["analytic_results"] = analytic_results
+    logger.info(f"Generated {len(proactive_outreach_suggestions)} proactive outreach suggestions.")
+    return state
+
 # ---------------- Graph Orchestration ---------------- #
 
 def build_analytic_graph():
@@ -517,6 +587,7 @@ def build_analytic_graph():
     workflow.add_node("resource_topics", resource_topic_aggregator)
     workflow.add_node("resolution_metrics", resolution_efficiency_metrics)
     workflow.add_node("user_engagement", user_engagement_metrics)
+    workflow.add_node("predictive_risk", predictive_risk_analyzer)
     # workflow.add_node("emerging_themes", emerging_theme_detector_agent) # Uncomment if using LLM agent
     workflow.add_node("snapshot_generation", snapshot_generator)
     workflow.add_node("db_saver", db_saver_agent)
@@ -529,6 +600,8 @@ def build_analytic_graph():
     workflow.add_edge("stressors_concerns", "resource_topics")
     workflow.add_edge("resource_topics", "resolution_metrics")
     workflow.add_edge("resolution_metrics", "user_engagement")
+    workflow.add_edge("user_engagement", "predictive_risk")
+    workflow.add_edge("predictive_risk", "snapshot_generation")
     # workflow.add_edge("user_engagement", "emerging_themes") # Connect if using LLM agent
     # workflow.add_edge("emerging_themes", "snapshot_generation") # Connect if using LLM agent
     workflow.add_edge("user_engagement", "snapshot_generation") # If not using LLM agent

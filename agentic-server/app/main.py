@@ -6,6 +6,8 @@ from typing import Dict
 
 from .services.report_service import generate_student_report
 from .utils.logger import get_logger
+from .services.pathway_service import generate_learning_pathway
+from .schemas.learning_pathway import PathwayGenerationRequest, LearningPathwayOutput
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,4 +47,26 @@ async def create_report(request: ChatHistoryRequest) -> Dict:
         return reports
     except Exception as e:
         logger.error(f"An error occurred during report generation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    
+@app.post("/generate-pathway", response_model=LearningPathwayOutput, tags=["Pathways"])
+async def create_learning_pathway(request: PathwayGenerationRequest):
+    """
+    Accepts key stressors and topics from an AI report and generates
+    a personalized learning pathway for the student.
+    """
+    try:
+        logger.info(f"Received request to generate a new learning pathway with topics: {request.suggested_resource_topics}")
+        
+        pathway = await generate_learning_pathway(
+            stressors=request.key_stressors,
+            topics=request.suggested_resource_topics,
+            language=request.student_language
+        )
+        return pathway
+    except ValueError as ve:
+        logger.error(f"Validation error during pathway generation: {ve}")
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.error(f"An error occurred during pathway generation: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")

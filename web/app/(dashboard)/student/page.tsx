@@ -1,7 +1,7 @@
 // FILE: web/app/(dashboard)/student/page.tsx
 "use client";
 import { useAuthStore } from "@/store/auth.store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Calendar,
@@ -12,6 +12,7 @@ import {
   Settings,
   Plus,
   ArrowRight,
+  HeartPulse, // NEW: Import the icon
 } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -80,7 +81,6 @@ export default function StudentDashboardPage() {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        {/* FIX: Added optional chaining for safety */}
         <StatCard
           title="Upcoming Bookings"
           value={dashboardData?.bookings?.pending ?? 0}
@@ -106,13 +106,40 @@ export default function StudentDashboardPage() {
         />
       </motion.div>
 
+      {/* NEW: Weekly Wellness Check-in Prompt */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="bg-primary/5 border-primary/20">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                    <HeartPulse className="h-6 w-6 text-primary" />
+                    Weekly Wellness Check-in
+                </CardTitle>
+                <CardDescription>
+                    Take a moment to reflect on your week. Tracking your mood and stress can help you understand your wellness patterns.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Link href="/student/wellness-trends" passHref>
+                    <Button>
+                        Log Today's Mood & Stress
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
         >
           <Card>
             <CardHeader>
@@ -157,7 +184,7 @@ export default function StudentDashboardPage() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
         >
           <Card>
             <CardHeader>

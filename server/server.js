@@ -14,6 +14,7 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
 import sanitizeHtml from "sanitize-html";
+import cron from 'node-cron';
 
 // Models
 import Room from "./models/room.model.js";
@@ -25,7 +26,8 @@ import Admin from "./models/admin.model.js";
 import Conversation from "./models/conversation.model.js";
 import PrivateMessage from "./models/privateMessage.model.js";
 import Notification from "./models/notification.model.js";
-
+import StudentCheckin from "./models/studentCheckin.model.js";
+import LearningPathway from "./models/learningPathway.model.js";
 
 
 import AnalyticsSnapshot from "./models/analyticSnapshot.model.js";// analytic
@@ -115,6 +117,9 @@ import notificationRoutes from "./routes/notification.routes.js";
 import conversationRoutes from "./routes/conversation.routes.js";
 import aiReportRoutes from "./routes/aiReport.routes.js";
 import psychoeducationalResourceRoutes from "./routes/psychoeducationalResource.routes.js";
+import studentCheckinRoutes from "./routes/studentCheckin.routes.js";
+import learningPathwayRoutes from "./routes/learningPathway.routes.js";
+
 
 app.use("/api/students", studentRoutes);
 app.use("/api/counsellors", counsellorRoutes);
@@ -129,6 +134,10 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/conversations", conversationRoutes);
 app.use("/api/ai-reports", aiReportRoutes); 
 app.use("/api/resources", psychoeducationalResourceRoutes);
+app.use("/api/checkins", studentCheckinRoutes);
+app.use("/api/pathways", learningPathwayRoutes);
+
+
 
 // Fallbacks
 app.use(notFound);
@@ -526,4 +535,35 @@ server.listen(PORT, () => {
   console.log(`🚀 HTTP+WS running on port ${PORT}`);
   console.log(`📱 Client URL: ${process.env.CLIENT_URL || "http://localhost:3000"}`);
   console.log(`🔒 Environment: ${process.env.NODE_ENV || "development"}`);
+
+  cron.schedule('0 10 * * 0', async () => {
+  console.log('Running weekly check-in reminder job...');
+  try {
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    // Find students who haven't checked in for a week
+    const studentsToNotify = await Student.find({
+      lastActive: { $gte: oneWeekAgo }, // Only active students
+      _id: { 
+        $nin: await StudentCheckin.distinct('student', { createdAt: { $gte: oneWeekAgo } })
+      }
+    }).select('_id');
+    
+    const recipients = studentsToNotify.map(s => ({ userId: s._id, userModel: 'Student' }));
+
+    if (recipients.length > 0) {
+      await Notification.createSystemNotification(
+        recipients,
+        'checkin_reminder',
+        'How are you feeling?',
+        'Just a gentle reminder to check in with your mental wellness for the week. It only takes a moment.',
+        { actionUrl: '/student/wellness-trends' }
+      );
+      console.log(`Sent check-in reminders to ${recipients.length} students.`);
+    }
+  } catch (error) {
+    console.error('Error in check-in reminder job:', error);
+  }
+});
 });

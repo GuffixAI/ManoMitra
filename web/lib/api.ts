@@ -76,6 +76,9 @@ export const studentAPI = {
   updateLastActive: async () => api.post('/students/activity').then(res => res.data),
   disconnectCounsellor: async (counsellorId: string) => api.delete(`/students/counsellors/${counsellorId}`).then(res => res.data),
   disconnectVolunteer: async (volunteerId: string) => api.delete(`/students/volunteers/${volunteerId}`).then(res => res.data),
+
+  submitCheckin: async (data: { moodScore: number; stressLevel: number; openEndedFeedback?: string }) => api.post('/checkins', data).then(res => res.data),
+  getCheckinHistory: async () => api.get('/checkins/history').then(getData),
 };
 
 // Counsellor API
@@ -262,4 +265,14 @@ export const psychoeducationalResourceAPI = {
   }).then(res => res.data),
   deleteResource: async (id: string) => api.delete(`/resources/${id}`).then(res => res.data),
   getRecommended: async (topics: string[], language: string = 'en') => api.get('/resources/recommended', { params: { topics: topics.join(','), language } }).then(res => res.data),
+};
+
+
+export const pathwayAPI = {
+  generatePathway: async (aiReportId: string) => 
+    api.post('/pathways/generate', { aiReportId }).then(res => res.data),
+  getMyPathways: async () => 
+    api.get('/pathways/my').then(getData),
+  markStepComplete: async (pathwayId: string, resourceId: string) => 
+    api.patch(`/pathways/${pathwayId}/steps/${resourceId}/complete`).then(res => res.data),
 };

@@ -146,3 +146,25 @@ export const useStudentDashboard = () => {
     queryFn: () => studentAPI.getDashboard(),
   });
 };
+
+
+export const useSubmitCheckin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { moodScore: number; stressLevel: number; openEndedFeedback?: string }) => studentAPI.submitCheckin(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["studentCheckinHistory"] });
+      toast.success("Your check-in has been recorded. Thank you!");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Failed to submit check-in.");
+    },
+  });
+};
+
+export const useGetCheckinHistory = () => {
+  return useQuery({
+    queryKey: ["studentCheckinHistory"],
+    queryFn: () => studentAPI.getCheckinHistory(),
+  });
+};

@@ -4,10 +4,13 @@
 import { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useGetAIReportById } from '@/hooks/api/useAIReports';
+import { useGeneratePathway } from '@/hooks/api/usePathways'; // NEW
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuthStore } from '@/store/auth.store';
 import { ROLES } from '@/lib/constants';
+import { Button } from '@/components/ui/button'; // NEW
+import { Wand2, Loader2 } from 'lucide-react'; // NEW
 
 // Import the display components
 import { DemoReportDisplay } from '@/components/ai-reports/DemoReportDisplay';
@@ -18,8 +21,13 @@ export default function AIReportDetailsPage() {
     const id = params.id as string;
     const { user } = useAuthStore();
     const { data: report, isLoading } = useGetAIReportById(id);
+    const generatePathwayMutation = useGeneratePathway(); // NEW
 
-    // Memoize the parsed JSON to prevent re-parsing on every render
+    const handleGeneratePathway = () => {
+        generatePathwayMutation.mutate(id);
+    };
+
+    // ... (useMemo hooks for parsing JSON remain the same)
     const parsedDemoReport = useMemo(() => {
         if (!report?.demo_report?.demo_content) return null;
         try {
@@ -40,6 +48,7 @@ export default function AIReportDetailsPage() {
         }
     }, [report]);
 
+
     if (isLoading) {
         return <div className="flex h-full items-center justify-center"><Spinner size="lg" /></div>;
     }
@@ -48,19 +57,29 @@ export default function AIReportDetailsPage() {
         return <p>Report not found or data is corrupted.</p>;
     }
     
-    // Determine if the user has a role that can see the professional view
-    // const canViewStandardReport = user?.role === ROLES.ADMIN || user?.role === ROLES.COUNSELLOR;
-    const canViewStandardReport =  true
+    const canViewStandardReport = user?.role === ROLES.ADMIN || user?.role === ROLES.COUNSELLOR;
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold">AI Wellness Report</h1>
-            <p className="text-muted-foreground">Generated on: {new Date(report.createdAt).toLocaleString()}</p>
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold">AI Wellness Report</h1>
+                    <p className="text-muted-foreground">Generated on: {new Date(report.createdAt).toLocaleString()}</p>
+                </div>
+                {/* NEW: Generate Pathway Button */}
+                <Button onClick={handleGeneratePathway} disabled={generatePathwayMutation.isPending}>
+                    {generatePathwayMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Wand2 className="mr-2 h-4 w-4" />
+                    )}
+                    Generate My Learning Pathway
+                </Button>
+            </div>
 
             <Tabs defaultValue="student_view" className="w-full">
                 <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 sm:max-w-md">
                     <TabsTrigger value="student_view">For You (Student View)</TabsTrigger>
-                    {/* Conditionally render the professional view tab */}
                     {canViewStandardReport && (
                         <TabsTrigger value="professional_view">Technical View</TabsTrigger>
                     )}

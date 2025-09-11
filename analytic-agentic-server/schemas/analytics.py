@@ -80,6 +80,8 @@ class AnalyticsSnapshot(BaseModel):
     # --- Raw data hashes/versioning for audit ---
     rawDataHash: Optional[str] = None
     filtersUsed: Dict[str, Any] = Field(default_factory=dict)
+    
+    proactiveOutreachSuggestions: List[Dict[str, Any]] = Field(default_factory=list)
 
     class Config:
         json_encoders = {

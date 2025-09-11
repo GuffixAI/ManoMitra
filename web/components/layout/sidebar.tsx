@@ -28,7 +28,9 @@ import {
   Star,
   GroupIcon,
   BotMessageSquareIcon,
-  ChartBarBigIcon
+  ChartBarBigIcon,
+  BarChart2,
+  BookHeart
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -103,11 +105,24 @@ export function Sidebar({ className }: SidebarProps) {
             badge: null,
           },
           { 
+            title: "My Pathways", // NEW
+            href: "/student/my-pathways",
+            icon: BookHeart, // Or another suitable icon
+            badge: null,
+          },
+          { 
             title: "AI Reports",
             href: "/student/ai-reports",
             icon: BrainCircuit,
             badge: reportUnreadCount > 0 ? reportUnreadCount : null,
           },
+          {
+            title: "Wellness Trends", // NEW
+            href: "/student/wellness-trends",
+            icon: BarChart2,
+            badge: null,
+          },
+
           {
             title: "Feedback",
             href: "/student/feedback",

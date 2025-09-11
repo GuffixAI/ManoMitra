@@ -69,3 +69,17 @@ class DataFetcher:
         """Fetches all volunteer data."""
         volunteers = list(self.volunteers_collection.find({}))
         return [self._convert_object_id_to_str(volunteer) for volunteer in volunteers]
+    
+    def fetch_all_checkins(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        """Fetches all student check-ins, optionally filtered by date range."""
+        query = {}
+        if start_date or end_date:
+            query['createdAt'] = {}
+            if start_date:
+                query['createdAt']['$gte'] = start_date
+            if end_date:
+                query['createdAt']['$lte'] = end_date
+        
+        logger.info(f"Fetching student check-ins with query: {query}")
+        checkins = list(self.db["studentcheckins"].find(query))
+        return [self._convert_object_id_to_str(checkin) for checkin in checkins]
