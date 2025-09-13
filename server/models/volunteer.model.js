@@ -1,3 +1,4 @@
+// FILE: server/models/volunteer.model.js
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { ROLES } from "../constants/roles.js";

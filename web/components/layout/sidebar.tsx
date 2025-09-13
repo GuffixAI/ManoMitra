@@ -379,7 +379,10 @@ export function Sidebar({ className }: SidebarProps) {
               onClick={() => isMobileOpen && setIsMobileOpen(false)}
             >
               <Button
-                variant={isActive ? "default" : "ghost"}
+                // FIX: Changed from 'pathname.startsWith' to an exact match '==='.
+                // This ensures that only the exact matching path is highlighted,
+                // preventing the main dashboard link from staying active on sub-pages.
+                variant={pathname === item.href ? "default" : "ghost"}
                 className={cn(
                   "w-full justify-start mb-2 cursor-pointer",
                   isCollapsed ? "justify-center px-2" : "px-4"

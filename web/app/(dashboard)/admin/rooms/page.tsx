@@ -20,7 +20,6 @@ export default function AdminRoomsPage() {
     
     // This hook returns the full response: { success, data, pagination }
     const { data: volunteersResponse, isLoading: isLoadingVolunteers } = useAllVolunteers(); 
-    // Extract the actual array of volunteers
     const volunteers = volunteersResponse?.data || [];
 
     console.log(volunteers)
@@ -158,7 +157,7 @@ export default function AdminRoomsPage() {
                                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingVolunteers}>
                                             <SelectTrigger><SelectValue placeholder="Select a volunteer..." /></SelectTrigger>
                                             <SelectContent>
-                                                {/* THIS IS THE KEY FIX */}
+                                                {/* This now correctly maps over the 'volunteers' array */}
                                                 {volunteers.map((v: any) => (
                                                     <SelectItem key={v._id} value={v._id}>{v.name}</SelectItem>
                                                 ))}

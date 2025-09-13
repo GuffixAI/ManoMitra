@@ -22,7 +22,7 @@ export const protect = async (req, res, next) => {
     else if (decoded.role === "admin") user = await Admin.findById(decoded.id);
 
     if (!user) {
-      // **BUG FIX:** Changed 404 to 401. If the token is valid but the user doesn't exist,
+      // FIX: Changed 404 to 401. If the token is valid but the user doesn't exist,
       // it's an authentication issue, not a "not found" issue.
       return res.status(401).json({ success: false, message: "Unauthorized: User not found" });
     }

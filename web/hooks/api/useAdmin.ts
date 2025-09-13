@@ -1,4 +1,3 @@
-
 // FILE: web/hooks/api/useAdmin.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminAPI } from "@/lib/api";
@@ -147,11 +146,11 @@ export const useCreateCounsellor = () => {
 };
 
 
-// in web/hooks/api/useAdmin.ts - The problem is here
+// FIX: The query function was incorrectly calling the students endpoint.
 export const useAllVolunteers = (params?: any) => {
   return useQuery({
     queryKey: ["allVolunteers", params],
-    // This should be using adminAPI.getAllVolunteers
+    // This now correctly calls the adminAPI method to get volunteers.
     queryFn: () => adminAPI.getAllVolunteers(params), 
   });
 };
