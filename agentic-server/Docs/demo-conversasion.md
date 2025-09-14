@@ -1,3 +1,0 @@
-{
-  "conversation_history": "Student: Hi, I've been feeling really overwhelmed lately. My exams are coming up and I can't sleep. I just keep worrying that I'm going to fail everything. It's hard to even focus on studying. Sometimes I feel so alone with this pressure. Chatbot: I understand that exam period can be incredibly stressful. It's completely normal to feel this way. Let's explore some strategies that might help..."
-}
