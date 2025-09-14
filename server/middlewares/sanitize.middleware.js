@@ -21,7 +21,5 @@ export const sanitizeRequest = (req, res, next) => {
       }
     }
   }
-  // We don't typically need to sanitize req.query or req.params in the same way,
-  // as they are handled differently by database drivers (e.g., parameter binding in Mongoose).
   next();
 };
