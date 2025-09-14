@@ -1,24 +1,25 @@
-// lib/axios.ts
+// web/lib/axios.ts
 import axios from "axios";
 import { useAuthStore } from "@/store/auth.store";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
-  withCredentials: true, // This is important for cookies if frontend and backend are on different subdomains
+  withCredentials: true,
 });
 
-// Attach Authorization header from Zustand store's token (or cookie as fallback)
+// ** THIS IS THE KEY FIX **
+// Attach Authorization header by getting the most recent state from Zustand.
 api.interceptors.request.use((config) => {
-  if (typeof document !== 'undefined') {
-    const match = document.cookie.match(/(?:^|; )token=([^;]*)/);
-    const token = match ? decodeURIComponent(match[1]) : undefined;
-    if (token) {
-      config.headers = config.headers || {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
-    }
+  // Use useAuthStore.getState() to access the store outside of a React component.
+  const token = useAuthStore.getState().token;
+  
+  if (token) {
+    config.headers = config.headers || {};
+    (config.headers as any).Authorization = `Bearer ${token}`;
   }
   return config;
 });
+
 
 // Interceptor to handle expired tokens and other auth errors
 api.interceptors.response.use(
@@ -30,18 +31,19 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        // Attempt to refresh the token. The backend should handle this by checking the refresh token cookie
-        // and issuing a new access token via the Authorization header or a new 'token' cookie.
-        // For this project, let's assume a refresh endpoint is not yet implemented and just log out.
+        console.error("Authentication error (401). Forcing logout.");
         
-        console.error("Authentication error (401). Logging out.");
+        // ** IMPORTANT **
+        // Directly call the logout logic from the store.
+        // This will clear the user state and token, preventing further failed requests.
         useAuthStore.getState().logout();
-        // Use window.location to force a full page reload to the login page, clearing all state.
-        if (typeof window !== 'undefined') {
+        
+        // Use window.location to force a full page reload to the login page.
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.href = '/login';
         }
         
-        return Promise.reject(error);
+        return Promise.reject(new Error("Session expired. Please log in again."));
 
       } catch (logoutError) {
         return Promise.reject(logoutError);
