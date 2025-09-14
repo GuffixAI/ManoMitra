@@ -1,5 +1,6 @@
+# agentic-server/app/schemas/analytics.py
 
-from pydantic import BaseModel, Field, conlist, validator
+from pydantic import BaseModel, Field, conlist, field_validator
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import json
@@ -8,7 +9,7 @@ import json
 
 class TopItem(BaseModel):
     """Schema for items like top stressors or red flags."""
-    item: str = Field(..., alias="flag" or "stressor" or "concern" or "topic") # Generic name, will be aliased
+    item: str = Field(..., alias="flag" or "stressor" or "concern" or "topic")
     count: int = Field(..., ge=0)
 
 class CounselorReportCount(BaseModel):
@@ -27,7 +28,8 @@ class SentimentTrendItem(BaseModel):
 class AnalyticsSnapshot(BaseModel):
     """
     Pydantic schema representing a comprehensive analytics snapshot.
-    This structure mirrors the MongoDB model 'AnalyticsSnapshot'.
+    NOTE: The Pylance warning 'Call expression not allowed in type expression' for `conlist` is a known linter issue.
+    This syntax is correct for Pydantic v2 constrained types.
     """
     snapshotTimestamp: datetime = Field(default_factory=datetime.utcnow)
     snapshotVersion: str = Field(...)
@@ -43,7 +45,7 @@ class AnalyticsSnapshot(BaseModel):
     # --- Sentiment & Risk Trends ---
     sentimentDistribution: Dict[str, int] = Field(default_factory=dict)
     riskLevelDistribution: Dict[str, int] = Field(default_factory=dict)
-    topRedFlags: conlist(TopItem, max_items=10) = Field(default_factory=list) # Max 10 top flags
+    topRedFlags: conlist(TopItem, max_length=10) = Field(default_factory=list)
 
     # --- Screening Score Insights ---
     avgPHQ9: float = Field(default=0.0, ge=0.0)
@@ -55,20 +57,20 @@ class AnalyticsSnapshot(BaseModel):
     ghqDistribution: Dict[str, int] = Field(default_factory=dict)
 
     # --- Stressor & Concern Analysis ---
-    topStressors: conlist(TopItem, max_items=10) = Field(default_factory=list)
-    topStudentConcerns: conlist(TopItem, max_items=10) = Field(default_factory=list)
+    topStressors: conlist(TopItem, max_length=10) = Field(default_factory=list)
+    topStudentConcerns: conlist(TopItem, max_length=10) = Field(default_factory=list)
     
     # --- Resource Recommendation Effectiveness ---
-    topSuggestedResourceTopics: conlist(TopItem, max_items=10) = Field(default_factory=list)
+    topSuggestedResourceTopics: conlist(TopItem, max_length=10) = Field(default_factory=list)
     
     # --- Resolution & Assignment Metrics ---
     avgReportResolutionTimeDays: float = Field(default=0.0, ge=0.0)
     reportsByStatus: Dict[str, int] = Field(default_factory=dict)
-    topCounsellorsByReportsResolved: conlist(CounselorReportCount, max_items=5) = Field(default_factory=list)
+    topCounsellorsByReportsResolved: conlist(CounselorReportCount, max_length=5) = Field(default_factory=list)
     avgTimeToAssignReportHours: float = Field(default=0.0, ge=0.0)
 
     # --- User Engagement Metrics (Calculated for period) ---
-    activeStudentsDaily: Dict[str, int] = Field(default_factory=dict) # e.g., {'2023-01-01': 50}
+    activeStudentsDaily: Dict[str, int] = Field(default_factory=dict)
     activeStudentsWeekly: Dict[str, int] = Field(default_factory=dict)
     activeStudentsMonthly: Dict[str, int] = Field(default_factory=dict)
 
@@ -84,10 +86,8 @@ class AnalyticsSnapshot(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: lambda dt: dt.isoformat() # Ensure datetime is ISO formatted
+            datetime: lambda dt: dt.isoformat()
         }
-        # Allow extra fields temporarily for parsing flexibility,
-        # but ideally your input data should match the schema.
         extra = "allow"
 
 # --- Request/Input Schemas for triggering analytics ---
@@ -95,7 +95,6 @@ class AnalyticsSnapshot(BaseModel):
 class AnalyticsRequest(BaseModel):
     period_start: Optional[datetime] = None
     period_end: Optional[datetime] = None
-    # Add any other filters an admin might specify
     filters: Dict[str, Any] = Field(default_factory=dict)
 
 class AnalyticsResponse(BaseModel):
@@ -103,7 +102,7 @@ class AnalyticsResponse(BaseModel):
     message: str
     snapshot_id: Optional[str] = None
     snapshot_version: Optional[str] = None
-    data: Optional[AnalyticsSnapshot] = None # For fetching a specific snapshot
+    data: Optional[AnalyticsSnapshot] = None
 
 # --- Helper schemas for parsing raw AI report content ---
 
@@ -111,7 +110,7 @@ class AIReportDemoContent(BaseModel):
     student_summary: Optional[str] = None
     key_takeaways: Optional[List[str]] = None
     suggested_first_steps: Optional[List[str]] = None
-    helpful_resources: Optional[Dict[str, Any]] = None # flexible
+    helpful_resources: Optional[Dict[str, Any]] = None
     message_of_encouragement: Optional[str] = None
 
 class AIReportStandardRiskAssessment(BaseModel):
@@ -145,27 +144,23 @@ class AIReportStandardContent(BaseModel):
 class AIReportFull(BaseModel):
     _id: str
     student: str
-    demo_report: Dict[str, str] # Raw JSON string in 'demo_content'
-    standard_report: Dict[str, str] # Raw JSON string in 'standard_content'
+    demo_report: Dict[str, Any]
+    standard_report: Dict[str, Any]
     createdAt: datetime
     updatedAt: datetime
 
-    @validator('demo_report', pre=True)
-    def parse_demo_report_content(cls, v):
-        if isinstance(v, dict) and 'demo_content' in v and isinstance(v['demo_content'], str):
+    @field_validator('demo_report', 'standard_report', mode='before')
+    @classmethod
+    def parse_json_content(cls, v: Any) -> Any:
+        """
+        This validator runs before standard validation to parse JSON strings
+        found within the 'demo_report' and 'standard_report' fields from the database.
+        """
+        content_key = 'demo_content' if 'demo_content' in v else 'standard_content'
+        
+        if isinstance(v, dict) and content_key in v and isinstance(v[content_key], str):
             try:
-                # Attempt to parse the JSON string, but return the raw dict if it fails
-                return json.loads(v['demo_content'])
+                return json.loads(v[content_key])
             except json.JSONDecodeError:
-                # If parsing fails, just return the dict as is (or handle error)
-                return v
-        return v
-
-    @validator('standard_report', pre=True)
-    def parse_standard_report_content(cls, v):
-        if isinstance(v, dict) and 'standard_content' in v and isinstance(v['standard_content'], str):
-            try:
-                return json.loads(v['standard_content'])
-            except json.JSONDecodeError:
-                return v
+                return {}
         return v

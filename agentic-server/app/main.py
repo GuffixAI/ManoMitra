@@ -39,8 +39,7 @@ async def lifespan(app: FastAPI):
         logger.info("Analytic Server: MongoDB connection closed.")
     except Exception as e:
         logger.error(f"Analytic Server: Fatal error during startup or shutdown: {e}", exc_info=True)
-        # Optionally re-raise to prevent server from starting if DB connection is critical
-        # raise
+
 
 app = FastAPI(
     title="Mental Health Multi-Agent System",

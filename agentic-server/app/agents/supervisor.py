@@ -1,5 +1,3 @@
-# // FILE: agentic-server/app/agents/supervisor.py
-
 # app/agents/supervisor.py
 
 # FIX: Add MessagesPlaceholder to the imports
@@ -32,7 +30,7 @@ BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:5000/api")
 
 
 # Use a more capable model for analysis and generation
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL"))
 
 # ---------------- Pydantic Output Models for Agents ---------------- #
 

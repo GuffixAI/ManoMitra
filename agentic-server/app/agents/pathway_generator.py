@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 BACKEND_API_URL = os.getenv("BACKEND_API_URL", "http://localhost:5000/api")
 
 # Initialize the LLM for structuring the pathway
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatGoogleGenerativeAI(model=os.getenv("LLM_MODEL"))
 
 # Define the system prompt for the LLM
 PROMPT_TEMPLATE = ChatPromptTemplate.from_messages([
@@ -62,12 +62,10 @@ async def learning_path_generator_agent(stressors: List[str], topics: List[str],
             logger.info(f"Received {len(available_resources)} resources from backend.")
     except Exception as e:
         logger.error(f"Failed to fetch resources from backend: {e}", exc_info=True)
-        # If resource fetching fails, we cannot proceed.
         raise ValueError("Could not retrieve resources to build the pathway.") from e
 
     if not available_resources:
         logger.warning("No resources found for the given topics. Cannot generate a pathway.")
-        # Return a default empty pathway or handle as an error
         return {"title": "Resources for You", "steps": []}
 
     # 2. Use the LLM to structure the pathway
