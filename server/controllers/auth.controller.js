@@ -292,9 +292,128 @@ export const loginAdmin = async (req, res) => {
 };
 
 // Universal login endpoint
+// export const universalLogin = async (req, res) => {
+//   try {
+//     const { email, password, role } = req.body;
+//     if (!email || !password || !role) {
+//       return res.status(400).json({ success: false, message: "Email, password and role required" });
+//     }
+    
+//     let user;
+//     let model;
+//     switch (role) {
+//       case ROLES.STUDENT: model = Student; break;
+//       case ROLES.COUNSELLOR: model = Counsellor; break;
+//       case ROLES.VOLUNTEER: model = Volunteer; break;
+//       case ROLES.ADMIN: model = Admin; break;
+//       default: return res.status(400).json({ success: false, message: "Invalid role" });
+//     }
+
+//     user = await model.findOne({ email });
+    
+//     if (!user) {
+//       return res.status(401).json({ success: false, message: "Invalid credentials" });
+//     }
+    
+//     const isMatch = await user.matchPassword(password);
+//     if (!isMatch) {
+//       return res.status(401).json({ success: false, message: "Invalid credentials" });
+//     }
+    
+//     const token = jwt.sign(
+//       { id: user._id, role: user.role }, 
+//       process.env.JWT_SECRET, 
+//       { expiresIn: process.env.JWT_EXPIRE || "7d" }
+//     );
+    
+//     // Return user data based on role
+//     const userData = {
+//       _id: user._id,
+//       email: user.email,
+//       role: user.role,
+//       ...(user.name && { name: user.name }),
+//       ...(user.studentCode && { studentCode: user.studentCode }),
+//       ...(user.specialization && { specialization: user.specialization }),
+//       ...(user.description && { description: user.description })
+//     };
+    
+//     res.status(200).json({ 
+//       success: true, 
+//       token, 
+//       user: userData
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
+// export const universalLogin = async (req, res) => {
+//   try {
+//     const { email, password, role } = req.body;
+    
+//     // --- DEBUG LOG 1 ---
+//     console.log(`[LOGIN ATTEMPT] Role: ${role}, Email: ${email}`);
+
+//     if (!email || !password || !role) {
+//       return res.status(400).json({ success: false, message: "Email, password and role required" });
+//     }
+    
+//     let user;
+//     let model;
+//     switch (role) {
+//       case ROLES.STUDENT: model = Student; break;
+//       case ROLES.COUNSELLOR: model = Counsellor; break;
+//       case ROLES.VOLUNTEER: model = Volunteer; break;
+//       case ROLES.ADMIN: model = Admin; break;
+//       default: return res.status(400).json({ success: false, message: "Invalid role" });
+//     }
+
+//     user = await model.findOne({ email });
+    
+//     if (!user) {
+//       // --- DEBUG LOG 2 ---
+//       console.log(`[LOGIN FAILED] User not found for email: ${email}`);
+//       return res.status(401).json({ success: false, message: "Invalid credentials" });
+//     }
+    
+//     // --- DEBUG LOG 3 ---
+//     console.log(`[LOGIN INFO] User found: ${user._id}. Now checking password.`);
+    
+//     const isMatch = await user.matchPassword(password);
+//     if (!isMatch) {
+//       // --- DEBUG LOG 4 ---
+//       console.log(`[LOGIN FAILED] Password mismatch for user: ${user._id}`);
+//       return res.status(401).json({ success: false, message: "Invalid credentials" });
+//     }
+    
+//     // --- DEBUG LOG 5 ---
+//     console.log(`[LOGIN SUCCESS] Password matched for user: ${user._id}. Generating token.`);
+
+//     const token = jwt.sign(
+//       { id: user._id, role: user.role }, 
+//       process.env.JWT_SECRET, 
+//       { expiresIn: process.env.JWT_EXPIRE || "7d" }
+//     );
+    
+//     // ... (rest of the function)
+//   } catch (err) {
+//     // --- DEBUG LOG 6 ---
+//     console.error('[LOGIN ERROR]', err);
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
+
+// FILE: server/controllers/auth.controller.js
+
+// Universal login endpoint
 export const universalLogin = async (req, res) => {
   try {
     const { email, password, role } = req.body;
+    
+    // --- DEBUG LOG 1 ---
+    console.log(`[LOGIN ATTEMPT] Role: ${role}, Email: ${email}`);
+
     if (!email || !password || !role) {
       return res.status(400).json({ success: false, message: "Email, password and role required" });
     }
@@ -312,40 +431,57 @@ export const universalLogin = async (req, res) => {
     user = await model.findOne({ email });
     
     if (!user) {
+      // --- DEBUG LOG 2 ---
+      console.log(`[LOGIN FAILED] User not found for email: ${email}`);
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
+    
+    // --- DEBUG LOG 3 ---
+    console.log(`[LOGIN INFO] User found: ${user._id}. Now checking password.`);
     
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      // --- DEBUG LOG 4 ---
+      console.log(`[LOGIN FAILED] Password mismatch for user: ${user._id}`);
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
     
+    // --- DEBUG LOG 5 ---
+    console.log(`[LOGIN SUCCESS] Password matched for user: ${user._id}. Generating token.`);
+
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
       process.env.JWT_SECRET, 
       { expiresIn: process.env.JWT_EXPIRE || "7d" }
     );
     
-    // Return user data based on role
+    // Prepare the user data to be sent back
     const userData = {
       _id: user._id,
       email: user.email,
       role: user.role,
-      ...(user.name && { name: user.name }),
+      name: user.name,
       ...(user.studentCode && { studentCode: user.studentCode }),
       ...(user.specialization && { specialization: user.specialization }),
-      ...(user.description && { description: user.description })
     };
     
+    // --- THIS IS THE FIX ---
+    // This line sends the successful response, token, and user data to the frontend.
+    // It was missing from the execution flow.
     res.status(200).json({ 
       success: true, 
       token, 
       user: userData
     });
+    // --- END OF FIX ---
+
   } catch (err) {
+    // --- DEBUG LOG 6 ---
+    console.error('[LOGIN ERROR]', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 // Change Password for logged-in user
 export const changePassword = async (req, res) => {

@@ -1,5 +1,3 @@
-// FILE: server/controllers/report.controller.js
-
 import Report from "../models/report.model.js";
 import Student from "../models/student.model.js";
 import Counsellor from "../models/counsellor.model.js";
@@ -253,8 +251,8 @@ export const updateReportStatus = async (req, res) => {
     }
 
     // Check if the counsellor is assigned to this report
-    // FIX: Explicitly check the _id of the populated document
-    if (report.assignedTo?._id.toString() !== req.user.id) {
+    // FIX: Explicitly check the _id of the populated document and handle null case
+    if (!report.assignedTo || report.assignedTo._id.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: "Access denied. You are not assigned to this report." });
     }
 

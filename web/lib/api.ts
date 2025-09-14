@@ -113,9 +113,65 @@ export const volunteerAPI = {
 };
 
 // Admin API
+// export const adminAPI = {
+//   getProfile: async () => api.get('/admin/profile').then(getData), // ADDED
+//   updateProfile: async (data: Partial<Admin>) => api.put('/admin/profile', data).then(res => res.data), // ADDED
+//   getDashboardStats: async () => api.get('/admin/dashboard/stats').then(getData),
+//   getAllStudents: async (params?: any) => api.get('/admin/users/students', { params }).then(res => res.data),
+//   getAllReports: async (params?: any) => api.get('/admin/reports', { params }).then(res => res.data),
+//   assignReport: async (reportId: string, counsellorId: string) => api.patch('/admin/reports/assign', { reportId, counsellorId }).then(res => res.data),
+//   getUserById: async (userId: string, userModel: string) => api.get(`/admin/users/${userModel}/${userId}`).then(getData),
+//   sendSystemNotification: async (notification: any) => api.post('/admin/notifications/system', notification).then(res => res.data),
+//   updateUserStatus: async (userId: string, userType: string, isActive: boolean) => api.patch('/admin/users/status', { userId, userType, isActive }).then(res => res.data),
+//   getSystemAnalytics: async (params?: any) => api.get('/admin/analytics', { params }).then(res => res.data),
+//   emergencyAccess: async (userId: string, userType: string, action: 'suspend' | 'activate') => api.post('/admin/emergency', { userId, userType, action }).then(res => res.data),
+//   getAllCounsellors: async (params?: any) => api.get('/admin/users/counsellors', { params }).then(getData),
+//   getAllVolunteers: async (params?: any) => api.get('/admin/users/volunteers', { params }).then(res => res.data),
+//   createCounsellor: async (data: any) => api.post('/admin/users/counsellors', data).then(res => res.data),
+
+
+
+
+
+
+
+//   //   // NEW: Trigger advanced analytics generation
+//   // triggerAdvancedAnalytics: async (period_start?: string, period_end?: string, filters?: any) => {
+//   //   return api.post('/admin/analytics/generate', { period_start, period_end, filters }).then(res => res.data);
+//   // },
+//   // // NEW: Get the latest advanced analytics snapshot
+//   // getLatestAdvancedAnalytics: async () => api.get('/admin/analytics/advanced/latest').then(getData),
+//   // // NEW: Get a specific advanced analytics snapshot by its ID
+//   // getAdvancedAnalyticsById: async (snapshotId: string) => api.get(`/admin/analytics/advanced/${snapshotId}`).then(getData),
+//   // // NEW: Get a list of all available snapshot versions
+//   // getAllAnalyticsVersions: async () => api.get('/admin/analytics/advanced/versions').then(getData),
+
+
+//     // NEW: Trigger advanced analytics generation
+//   triggerAdvancedAnalytics: async (period_start?: string, period_end?: string, filters?: any): Promise<TriggerAnalyticsResponse> => {
+//     const response = await api.post('/admin/analytics/generate', { period_start, period_end, filters });
+//     return response.data;
+//   },
+//   // NEW: Get the latest advanced analytics snapshot
+//   getLatestAdvancedAnalytics: async (): Promise<FetchAnalyticsResponse> => api.get('/admin/analytics/advanced/latest').then(res => res.data),
+//   // NEW: Get a specific advanced analytics snapshot by its ID
+//   getAdvancedAnalyticsById: async (snapshotId: string): Promise<FetchAnalyticsResponse> => api.get(`/admin/analytics/advanced/${snapshotId}`).then(res => res.data),
+//   // NEW: Get a list of all available snapshot versions
+//   getAllAnalyticsVersions: async (): Promise<FetchAnalyticsVersionsResponse> => api.get('/admin/analytics/advanced/versions').then(res => res.data),
+  
+// };
+
+
+
+
+
+// FILE: web/lib/api.ts
+// ... (keep everything before adminAPI the same)
+
+// Admin API
 export const adminAPI = {
-  getProfile: async () => api.get('/admin/profile').then(getData), // ADDED
-  updateProfile: async (data: Partial<Admin>) => api.put('/admin/profile', data).then(res => res.data), // ADDED
+  getProfile: async (): Promise<Admin> => api.get('/admin/profile').then(getData),
+  updateProfile: async (data: Partial<Admin>) => api.put('/admin/profile', data).then(res => res.data),
   getDashboardStats: async () => api.get('/admin/dashboard/stats').then(getData),
   getAllStudents: async (params?: any) => api.get('/admin/users/students', { params }).then(res => res.data),
   getAllReports: async (params?: any) => api.get('/admin/reports', { params }).then(res => res.data),
@@ -129,37 +185,29 @@ export const adminAPI = {
   getAllVolunteers: async (params?: any) => api.get('/admin/users/volunteers', { params }).then(res => res.data),
   createCounsellor: async (data: any) => api.post('/admin/users/counsellors', data).then(res => res.data),
 
-
-
-
-
-
-
-  //   // NEW: Trigger advanced analytics generation
-  // triggerAdvancedAnalytics: async (period_start?: string, period_end?: string, filters?: any) => {
-  //   return api.post('/admin/analytics/generate', { period_start, period_end, filters }).then(res => res.data);
-  // },
-  // // NEW: Get the latest advanced analytics snapshot
-  // getLatestAdvancedAnalytics: async () => api.get('/admin/analytics/advanced/latest').then(getData),
-  // // NEW: Get a specific advanced analytics snapshot by its ID
-  // getAdvancedAnalyticsById: async (snapshotId: string) => api.get(`/admin/analytics/advanced/${snapshotId}`).then(getData),
-  // // NEW: Get a list of all available snapshot versions
-  // getAllAnalyticsVersions: async () => api.get('/admin/analytics/advanced/versions').then(getData),
-
-
-    // NEW: Trigger advanced analytics generation
+  // --- FIXES FOR ANALYTICS API TYPES ---
   triggerAdvancedAnalytics: async (period_start?: string, period_end?: string, filters?: any): Promise<TriggerAnalyticsResponse> => {
     const response = await api.post('/admin/analytics/generate', { period_start, period_end, filters });
     return response.data;
   },
-  // NEW: Get the latest advanced analytics snapshot
-  getLatestAdvancedAnalytics: async (): Promise<FetchAnalyticsResponse> => api.get('/admin/analytics/advanced/latest').then(res => res.data),
-  // NEW: Get a specific advanced analytics snapshot by its ID
-  getAdvancedAnalyticsById: async (snapshotId: string): Promise<FetchAnalyticsResponse> => api.get(`/admin/analytics/advanced/${snapshotId}`).then(res => res.data),
-  // NEW: Get a list of all available snapshot versions
-  getAllAnalyticsVersions: async (): Promise<FetchAnalyticsVersionsResponse> => api.get('/admin/analytics/advanced/versions').then(res => res.data),
-  
+  // Explicitly define the Promise return type for each function
+  getLatestAdvancedAnalytics: async (): Promise<FetchAnalyticsResponse> => {
+    const response = await api.get('/admin/analytics/advanced/latest');
+    return response.data;
+  },
+  getAdvancedAnalyticsById: async (snapshotId: string): Promise<FetchAnalyticsResponse> => {
+    const response = await api.get(`/admin/analytics/advanced/${snapshotId}`);
+    return response.data;
+  },
+  getAllAnalyticsVersions: async (): Promise<FetchAnalyticsVersionsResponse> => {
+    const response = await api.get('/admin/analytics/advanced/versions');
+    return response.data;
+  },
 };
+
+
+
+
 
 // Booking API
 export const bookingAPI = {

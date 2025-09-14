@@ -1,4 +1,4 @@
-// web/app/(dashboard)/admin/advanced-analytics/page.tsx
+// FILE: web/app/(dashboard)/admin/advanced-analytics/page.tsx
 "use client";
 import { useState, useMemo } from "react";
 import { useTriggerAdvancedAnalytics, useLatestAdvancedAnalytics, useAllAnalyticsVersions, useAdvancedAnalyticsById } from "@/hooks/api/useAdmin";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Graph, TrendingUp, Users, Heart, ShieldAlert, BookOpen, Clock, CalendarDays, FileText } from "lucide-react";
+import { Loader2, RefreshCw, AreaChart, TrendingUp, Users, Heart, ShieldAlert, BookOpen, Clock, CalendarDays, FileText } from "lucide-react";
 import dayjs from "dayjs";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -17,8 +17,8 @@ import {
 import { AnalyticsSnapshot } from "@/types/analytics";
 import { Badge } from "@/components/ui/badge";
 
-import { useGetInterventions } from "@/hooks/api/useInterventions"; // NEW
-import { ChevronsRight } from "lucide-react"; // NEW
+import { useGetInterventions } from "@/hooks/api/useInterventions";
+import { ChevronsRight } from "lucide-react";
 
 const ComparisonCard = ({ title, valueA, valueB, format = (v) => v.toFixed(2) }: { title: string, valueA?: number, valueB?: number, format?: (v: number) => string }) => {
     const valA = valueA ?? 0;
@@ -58,21 +58,18 @@ export default function AdminAdvancedAnalyticsPage() {
     const { data: versionsData, isLoading: isLoadingVersions } = useAllAnalyticsVersions();
 
 
-    const { data: interventions } = useGetInterventions(); // NEW
+    const { data: interventions } = useGetInterventions();
 
-    // NEW State for comparison
     const [interventionId, setInterventionId] = useState<string | undefined>();
     const [snapshotAId, setSnapshotAId] = useState<string | undefined>();
     const [snapshotBId, setSnapshotBId] = useState<string | undefined>();
 
     const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | undefined>(undefined);
-    // Fetch the detailed snapshot if a specific version is selected, otherwise use latest
     const { data: displayedAnalytics, isLoading: isLoadingDisplayed } = useAdvancedAnalyticsById(selectedSnapshotId || "");
 
     const { data: snapshotA, isLoading: isLoadingA } = useAdvancedAnalyticsById(snapshotAId || "");
     const { data: snapshotB, isLoading: isLoadingB } = useAdvancedAnalyticsById(snapshotBId || "");
     
-    // Use memo to pick the snapshot to display (latest by default, or specific by ID)
     const currentAnalytics: AnalyticsSnapshot | undefined = useMemo(() => {
         if (selectedSnapshotId && displayedAnalytics) {
             return displayedAnalytics;
@@ -84,11 +81,11 @@ export default function AdminAdvancedAnalyticsPage() {
         triggerAnalyticsMutation.mutate({}, {
             onSuccess: (response) => {
                 toast.success(`Analytics snapshot ${response.snapshot_version} generated!`);
-                refetchLatest(); // Refresh latest after new one is generated
-                setSelectedSnapshotId(response.snapshot_id); // Automatically select new snapshot
+                refetchLatest();
+                setSelectedSnapshotId(response.snapshot_id);
             },
-            onError: (err) => {
-                toast.error(err.message || "Failed to generate analytics.");
+            onError: (err: any) => {
+                toast.error(err.response?.data?.message || "Failed to generate analytics.");
             },
         });
     };
@@ -125,7 +122,7 @@ export default function AdminAdvancedAnalyticsPage() {
     if (!currentAnalytics && !isLoadingLatest) {
         return (
             <div className="flex flex-col items-center justify-center h-full p-4 space-y-6">
-                <Graph className="w-24 h-24 text-muted-foreground" />
+                <AreaChart className="w-24 h-24 text-muted-foreground" />
                 <h1 className="text-3xl font-bold text-center">No Advanced Analytics Data Yet</h1>
                 <p className="text-muted-foreground text-center max-w-md">
                     Generate the first snapshot of your student mental health analytics to see comprehensive trends and insights.
@@ -148,22 +145,20 @@ export default function AdminAdvancedAnalyticsPage() {
         avgReportResolutionTimeDays, reportsByStatus, topCounsellorsByReportsResolved, avgTimeToAssignReportHours,
         activeStudentsDaily, activeStudentsWeekly, activeStudentsMonthly,
         emergingThemes, sentimentOverTime
-    } = currentAnalytics || {}; // Destructure, handling undefined if currentAnalytics is null/undefined
+    } = currentAnalytics || {};
 
     const sentimentChartData = prepareChartData(sentimentDistribution || {});
     const riskLevelChartData = prepareChartData(riskLevelDistribution || {});
     const reportsByStatusChartData = prepareChartData(reportsByStatus || {});
     const phq9ChartData = prepareChartData(phq9Distribution || {});
     const gad7ChartData = prepareChartData(gad7Distribution || {});
-
-    // Ensure TopItem arrays are in correct format for charts
-    const topRedFlagsChartData = topRedFlags?.map(item => ({ name: item.flag, value: item.count })) || [];
-    const topStressorsChartData = topStressors?.map(item => ({ name: item.stressor, value: item.count })) || [];
-    const topStudentConcernsChartData = topStudentConcerns?.map(item => ({ name: item.concern, value: item.count })) || [];
-    const topSuggestedResourceTopicsChartData = topSuggestedResourceTopics?.map(item => ({ name: item.topic, value: item.count })) || [];
+    
+    const topRedFlagsChartData = topRedFlags?.map(item => ({ name: (item as any).flag || item.item, value: item.count })) || [];
+    const topStressorsChartData = topStressors?.map(item => ({ name: (item as any).stressor || item.item, value: item.count })) || [];
+    const topStudentConcernsChartData = topStudentConcerns?.map(item => ({ name: (item as any).concern || item.item, value: item.count })) || [];
+    const topSuggestedResourceTopicsChartData = topSuggestedResourceTopics?.map(item => ({ name: (item as any).topic || item.item, value: item.count })) || [];
     const topCounsellorsChartData = topCounsellorsByReportsResolved?.map(item => ({ name: item.name, value: item.resolvedCount })) || [];
     
-    // Prepare engagement data
     const dailyActiveStudentsChartData = Object.entries(activeStudentsDaily || {})
         .map(([date, count]) => ({ date: dayjs(date).format('MMM D'), count }))
         .sort((a,b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
@@ -204,27 +199,26 @@ export default function AdminAdvancedAnalyticsPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="text-center">
                         <Users className="h-8 w-8 text-blue-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">{totalReports + totalAIReports}</p>
+                        <p className="text-2xl font-bold">{(totalReports ?? 0) + (totalAIReports ?? 0)}</p>
                         <p className="text-muted-foreground">Total Reports</p>
                     </div>
                     <div className="text-center">
                         <Heart className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">{totalStudentsEngaged}</p>
+                        <p className="text-2xl font-bold">{totalStudentsEngaged ?? 0}</p>
                         <p className="text-muted-foreground">Students Engaged</p>
                     </div>
                     <div className="text-center">
                         <FileText className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">{totalAIReports}</p>
+                        <p className="text-2xl font-bold">{totalAIReports ?? 0}</p>
                         <p className="text-muted-foreground">AI Reports</p>
                     </div>
                     <div className="text-center">
                         <BookOpen className="h-8 w-8 text-orange-500 mx-auto mb-2" />
-                        <p className="text-2xl font-bold">{totalManualReports}</p>
+                        <p className="text-2xl font-bold">{totalManualReports ?? 0}</p>
                         <p className="text-muted-foreground">Manual Reports</p>
                     </div>
                 </CardContent>
             </Card>
-
 
             <Card>
                 <CardHeader>
@@ -259,7 +253,6 @@ export default function AdminAdvancedAnalyticsPage() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Sentiment Distribution */}
                 <Card>
                     <CardHeader><CardTitle>Sentiment Distribution</CardTitle></CardHeader>
                     <CardContent>
@@ -273,7 +266,7 @@ export default function AdminAdvancedAnalyticsPage() {
                                     outerRadius={80}
                                     fill="#8884d8"
                                     dataKey="value"
-                                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                                    label={(entry: any) => `${entry.name} (${(entry.percent * 100).toFixed(0)}%)`}
                                 >
                                     {sentimentChartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
@@ -286,7 +279,6 @@ export default function AdminAdvancedAnalyticsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Risk Level Distribution */}
                 <Card>
                     <CardHeader><CardTitle>Risk Level Distribution</CardTitle></CardHeader>
                     <CardContent>
@@ -303,9 +295,8 @@ export default function AdminAdvancedAnalyticsPage() {
                     </CardContent>
                 </Card>
             </div>
-
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Top Red Flags */}
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-red-500"/> Top Red Flags</CardTitle></CardHeader>
                     <CardContent>
@@ -320,7 +311,6 @@ export default function AdminAdvancedAnalyticsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Top Stressors */}
                 <Card>
                     <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-yellow-500"/> Top Stressors</CardTitle></CardHeader>
                     <CardContent>
@@ -337,8 +327,7 @@ export default function AdminAdvancedAnalyticsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 {/* PHQ-9 Distribution */}
-                <Card>
+                 <Card>
                     <CardHeader><CardTitle>PHQ-9 Score Distribution</CardTitle></CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
@@ -354,7 +343,6 @@ export default function AdminAdvancedAnalyticsPage() {
                     </CardContent>
                 </Card>
 
-                {/* GAD-7 Distribution */}
                 <Card>
                     <CardHeader><CardTitle>GAD-7 Score Distribution</CardTitle></CardHeader>
                     <CardContent>
@@ -372,7 +360,6 @@ export default function AdminAdvancedAnalyticsPage() {
                 </Card>
             </div>
 
-            {/* Average Resolution Time & Reports by Status */}
             <Card>
                 <CardHeader>
                     <CardTitle>Manual Report Management</CardTitle>
@@ -392,7 +379,6 @@ export default function AdminAdvancedAnalyticsPage() {
                 </CardContent>
             </Card>
 
-            {/* Daily Active Students */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5"/> Daily Active Students</CardTitle>

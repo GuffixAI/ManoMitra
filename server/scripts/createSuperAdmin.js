@@ -26,6 +26,8 @@ const createSuperAdmin = async () => {
       process.exit(1);
     }
 
+    console.log(`   - Password: ${SUPER_ADMIN_PASSWORD}`);
+
     // 4. Create the new super admin user
     const superAdmin = new Admin({
       name: SUPER_ADMIN_NAME,
@@ -48,6 +50,7 @@ const createSuperAdmin = async () => {
     console.log("✅ Super admin created successfully!");
     console.log(`   - Name: ${superAdmin.name}`);
     console.log(`   - Email: ${superAdmin.email}`);
+    console.log(`   - Password: ${superAdmin.password}`);
 
   } catch (error) {
     console.error("❌ Failed to create super admin:", error.message);

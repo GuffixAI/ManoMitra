@@ -1,12 +1,12 @@
 // FILE: web/hooks/api/useAdmin.ts
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, UseQueryResult } from "@tanstack/react-query";
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
-import { Admin, User } from "@/types/auth"; 
+import { Admin, User } from "@/types/auth";
 import { AnalyticsSnapshot, TriggerAnalyticsResponse, FetchAnalyticsVersionsResponse } from '@/types/analytics';
 
-
+// ... (keep all hooks from useAdminDashboardStats to useAllVolunteers the same)
 export const useAdminDashboardStats = () => {
   return useQuery({
     queryKey: ["adminDashboardStats"],
@@ -27,8 +27,6 @@ export const useAllCounsellors = (params?: any) => {
     queryFn: () => adminAPI.getAllCounsellors(params),
   });
 };
-
-
 
 export const useAllReports = (params?: any) => {
   return useQuery({
@@ -52,15 +50,13 @@ export const useUserById = (userId: string, userModel: string) => {
     });
 };
 
-// Get the current admin's profile
 export const useAdminProfile = () => {
-  return useQuery<Admin>({ // Using the Admin type
+  return useQuery<Admin>({
     queryKey: ["adminProfile"],
     queryFn: () => adminAPI.getProfile(),
   });
 };
 
-// Update the current admin's profile
 export const useUpdateAdminProfile = () => {
   const queryClient = useQueryClient();
   const { user, setUser } = useAuthStore.getState();
@@ -70,7 +66,7 @@ export const useUpdateAdminProfile = () => {
     onSuccess: (response) => {
       const updatedAdmin = response.data;
       queryClient.invalidateQueries({ queryKey: ["adminProfile"] });
-      setUser({ ...user, ...updatedAdmin } as User); // Update user in Zustand
+      setUser({ ...user, ...updatedAdmin } as User);
       toast.success("Profile updated successfully!");
     },
     onError: (err: any) => {
@@ -118,7 +114,6 @@ export const useEmergencyAccess = () => {
         mutationFn: ({ userId, userType, action }: { userId: string, userType: string, action: 'suspend' | 'activate' }) =>
             adminAPI.emergencyAccess(userId, userType, action),
         onSuccess: (_, { userType, action }) => {
-            // Invalidate all user lists as a precaution
             queryClient.invalidateQueries({ queryKey: ['allStudents'] });
             queryClient.invalidateQueries({ queryKey: ['allCounsellors'] });
             queryClient.invalidateQueries({ queryKey: ['allVolunteers'] });
@@ -145,45 +140,23 @@ export const useCreateCounsellor = () => {
   });
 };
 
-
-// FIX: The query function was incorrectly calling the students endpoint.
 export const useAllVolunteers = (params?: any) => {
   return useQuery({
     queryKey: ["allVolunteers", params],
-    // This now correctly calls the adminAPI method to get volunteers.
     queryFn: () => adminAPI.getAllVolunteers(params), 
   });
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// NEW: Hook to trigger advanced analytics generation
+// --- FIXES FOR ANALYTICS HOOKS ---
 export const useTriggerAdvancedAnalytics = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ period_start, period_end, filters }: { period_start?: string; period_end?: string; filters?: any }) =>
-      adminAPI.triggerAdvancedAnalytics(period_start, period_end, filters),
+    mutationFn: (data: { period_start?: string; period_end?: string; filters?: any }): Promise<TriggerAnalyticsResponse> =>
+      adminAPI.triggerAdvancedAnalytics(data.period_start, data.period_end, data.filters),
     onSuccess: (data) => {
       toast.success(data.message);
-      queryClient.invalidateQueries({ queryKey: ["latestAdvancedAnalytics"] }); // Refetch latest
-      queryClient.invalidateQueries({ queryKey: ["allAnalyticsVersions"] }); // Refetch versions list
+      queryClient.invalidateQueries({ queryKey: ["latestAdvancedAnalytics"] });
+      queryClient.invalidateQueries({ queryKey: ["allAnalyticsVersions"] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || "Failed to trigger analytics generation.");
@@ -191,28 +164,24 @@ export const useTriggerAdvancedAnalytics = () => {
   });
 };
 
-// NEW: Hook to get the latest advanced analytics snapshot
-export const useLatestAdvancedAnalytics = () => {
-  return useQuery<AnalyticsSnapshot>({
+export const useLatestAdvancedAnalytics = (): UseQueryResult<AnalyticsSnapshot, Error> => {
+  return useQuery({
     queryKey: ["latestAdvancedAnalytics"],
     queryFn: () => adminAPI.getLatestAdvancedAnalytics().then(res => res.data),
-    staleTime: 5 * 60 * 1000, // Analytics are not real-time, can be stale for a bit
-    cacheTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
-// NEW: Hook to get a specific advanced analytics snapshot by its ID
-export const useAdvancedAnalyticsById = (snapshotId: string) => {
-  return useQuery<AnalyticsSnapshot>({
+export const useAdvancedAnalyticsById = (snapshotId: string): UseQueryResult<AnalyticsSnapshot, Error> => {
+  return useQuery({
     queryKey: ["advancedAnalytics", snapshotId],
     queryFn: () => adminAPI.getAdvancedAnalyticsById(snapshotId).then(res => res.data),
-    enabled: !!snapshotId, // Only run query if snapshotId is provided
+    enabled: !!snapshotId,
   });
 };
 
-// NEW: Hook to get a list of all available analytics snapshot versions
-export const useAllAnalyticsVersions = () => {
-  return useQuery<FetchAnalyticsVersionsResponse['data']>({
+export const useAllAnalyticsVersions = (): UseQueryResult<FetchAnalyticsVersionsResponse['data'], Error> => {
+  return useQuery({
     queryKey: ["allAnalyticsVersions"],
     queryFn: () => adminAPI.getAllAnalyticsVersions().then(res => res.data),
     staleTime: 5 * 60 * 1000,

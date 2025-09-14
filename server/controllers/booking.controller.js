@@ -50,7 +50,7 @@ export const createBooking = asyncHandler(async (req, res) => {
       sender: req.user.id,
       senderModel: 'Student',
       type: 'booking_request',
-      category: 'booking', // BUG FIX: Added required category field
+      category: 'booking', // FIX: Added required category field
       title: 'New Booking Request',
       message: `You have a new booking request from a student for ${startD.format('MMM D, h:mm A')}.`,
       data: { bookingId: booking._id, studentId: req.user.id }
@@ -96,7 +96,7 @@ export const cancelBooking = asyncHandler(async (req, res) => {
       recipient: booking.counsellor,
       recipientModel: 'Counsellor',
       type: 'booking_cancelled',
-      category: 'booking', // BUG FIX: Added required category field
+      category: 'booking', // FIX: Added required category field
       title: 'Booking Cancelled',
       message: `A student has cancelled the booking for ${dayjs(booking.start).format('MMM D, h:mm A')}.`,
       data: { bookingId: booking._id, studentId: booking.student }
@@ -134,7 +134,7 @@ export const confirmBooking = asyncHandler(async (req, res) => {
         recipient: booking.student,
         recipientModel: 'Student',
         type: 'booking_confirmed',
-        category: 'booking', // BUG FIX: Added required category field
+        category: 'booking', // FIX: Added required category field
         title: 'Booking Confirmed',
         message: `Your booking with a counsellor for ${dayjs(booking.start).format('MMM D, h:mm A')} has been confirmed.`,
         data: { bookingId: booking._id, counsellorId: req.user.id }
@@ -160,7 +160,7 @@ export const rejectBooking = asyncHandler(async (req, res) => {
         recipient: booking.student,
         recipientModel: 'Student',
         type: 'booking_rejected',
-        category: 'booking', // BUG FIX: Added required category field
+        category: 'booking', // FIX: Added required category field
         title: 'Booking Rejected',
         message: `Your booking request for ${dayjs(booking.start).format('MMM D, h:mm A')} has been rejected.`,
         data: { bookingId: booking._id, counsellorId: req.user.id }

@@ -16,11 +16,9 @@ export const useUserNotifications = (params?: any) => {
 // Get the count of unread notifications (now accepts an optional category)
 export const useUnreadCount = (category?: string) => {
   return useQuery({
-    // The query key now includes the category to differentiate caches
     queryKey: ["unreadNotificationsCount", category], 
-    // The category is passed to the API function
     queryFn: () => notificationAPI.getUnreadCount(category), 
-    refetchInterval: 60000, // Refetch every 60 seconds
+    refetchInterval: 60000,
   });
 };
 
