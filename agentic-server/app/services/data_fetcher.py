@@ -1,9 +1,8 @@
-# analytic-agentic-server/services/data_fetcher.py
 
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
-from analytic_agentic_server.db.connect import get_db
-from analytic_agentic_server.utils.logger import get_logger
+from app.db.connect import get_db
+from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

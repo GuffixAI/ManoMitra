@@ -14,3 +14,7 @@ arxiv
 xmltodict
 wikipedia
 youtube-search
+pymongo
+python-dotenv
+pandas
+numpy

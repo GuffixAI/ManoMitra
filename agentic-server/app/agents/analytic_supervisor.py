@@ -8,12 +8,13 @@ import hashlib
 from collections import Counter
 import numpy as np # For numerical operations, especially averages
 import os
+from typing_extensions import TypedDict
 
 from langgraph.graph import StateGraph, END
-from analytic_agentic_server.utils.logger import get_logger
-from analytic_agentic_server.services.data_fetcher import DataFetcher
-from analytic_agentic_server.schemas.analytics import AnalyticsSnapshot, AIReportFull
-from analytic_agentic_server.db.connect import get_db
+from app.utils.logger import get_logger
+from app.services.data_fetcher import DataFetcher
+from app.schemas.analytics import AnalyticsSnapshot, AIReportFull
+from app.db.connect import get_db
 
 # Optional: If you decide to use an LLM for advanced theme detection
 # from langchain_google_genai import ChatGoogleGenerativeAI

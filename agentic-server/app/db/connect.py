@@ -1,9 +1,8 @@
-# analytic-agentic-server/db/connect.py
 
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
-from analytic_agentic_server.utils.logger import get_logger
+from app.utils.logger import get_logger
 
 # Load environment variables
 load_dotenv()

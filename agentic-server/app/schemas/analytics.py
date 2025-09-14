@@ -1,9 +1,8 @@
-# analytic-agentic-server/schemas/analytics.py
 
 from pydantic import BaseModel, Field, conlist, validator
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-import json # For parsing nested JSON strings
+import json
 
 # --- Helper Schemas for Nested Data ---
 
