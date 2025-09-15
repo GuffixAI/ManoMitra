@@ -3,17 +3,20 @@ import mongoose from "mongoose";
 
 const pathwayStepSchema = new mongoose.Schema({
   resource: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PsychoeducationalResource',
+    type: String, // changed from ObjectId → String
     required: true
   },
   title: { type: String, required: true },
   description: { type: String },
-  type: { type: String, enum: ['video', 'audio', 'article', 'document'], required: true },
+  type: { 
+    type: String, 
+    enum: ['video', 'audio', 'article', 'document', 'meditation',"exercise"], // added meditation
+  },
   url: { type: String, required: true },
   completed: { type: Boolean, default: false },
   completedAt: { type: Date }
-}, { _id: false }); // Do not generate _id for subdocuments
+}, { _id: false });
+
 
 const learningPathwaySchema = new mongoose.Schema(
   {
@@ -27,9 +30,9 @@ const learningPathwaySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'AIReport',
       required: true,
-      unique: true // Ensure only one pathway per AI report
+      unique: true
     },
-    title: { type: String, required: true }, // e.g., "A Pathway to Manage Exam Stress"
+    title: { type: String, required: true }, 
     steps: [pathwayStepSchema],
   },
   { timestamps: true }

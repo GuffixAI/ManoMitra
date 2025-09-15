@@ -22,8 +22,7 @@ const psychoeducationalResourceSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["video", "audio", "article", "document"], // Match UI options
-      required: true,
+      enum: ["video", "audio", "article", "document","exercise","meditation"], // Match UI options
       index: true,
     },
     language: {

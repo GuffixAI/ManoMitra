@@ -16,6 +16,7 @@ async def generate_learning_pathway(stressors: List[str], topics: List[str], lan
             topics=topics,
             language=language
         )
+        
         return pathway
     except Exception as e:
         logger.error(f"Error in pathway service: {e}", exc_info=True)

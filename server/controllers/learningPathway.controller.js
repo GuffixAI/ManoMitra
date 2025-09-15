@@ -3,6 +3,7 @@ import LearningPathway from '../models/learningPathway.model.js';
 import AIReport from '../models/aiReport.model.js';
 import { asyncHandler } from '../middlewares/error.middleware.js';
 import axios from 'axios';
+import mongoose from "mongoose";
 
 // Get this from your .env file
 const AGENTIC_SERVER_URL = process.env.AGENTIC_SERVER_URL || 'http://localhost:8000';
@@ -41,7 +42,7 @@ export const generatePathway = asyncHandler(async (req, res) => {
 
     const key_stressors = standardReportContent.analytics?.key_stressors_identified || [];
     // The topics are nested inside 'summary' in the new report structure
-    const suggested_resource_topics = standardReportContent?.risk_assessment?.red_flags || [];
+    const suggested_resource_topics = standardReportContent.analytics?.key_stressors_identified || [];
     
     if (suggested_resource_topics.length === 0) {
          return res.status(400).json({ success: false, message: "No suggested topics found in the report to generate a pathway." });
@@ -56,6 +57,8 @@ export const generatePathway = asyncHandler(async (req, res) => {
 
     const pathwayData = agentResponse.data;
 
+    console.log(pathwayData)
+
     if (!pathwayData || !pathwayData.title || !pathwayData.steps) {
         throw new Error('Invalid pathway structure from agentic server.');
     }
@@ -64,7 +67,7 @@ export const generatePathway = asyncHandler(async (req, res) => {
     // Ensure the resource ID is a valid ObjectId
     const validatedSteps = pathwayData.steps.map(step => ({
         ...step,
-        resource: new mongoose.Types.ObjectId(step.resource)
+        resource: step.resource
     }));
 
     const newPathway = await LearningPathway.create({
@@ -77,7 +80,7 @@ export const generatePathway = asyncHandler(async (req, res) => {
     res.status(201).json({ success: true, message: "Learning pathway generated successfully.", data: newPathway });
 
     } catch (e) {
-        return res.status(500).json({ success: false, message: `Could not parse AI report data: ${e.message}` });
+        return res.status(500).json({ success: false, message: `Global Error Pathway: ${e.message}` });
     }
 });
 

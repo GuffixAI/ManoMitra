@@ -138,6 +138,8 @@ export default function AdminResourcesPage() {
         { value: "audio", label: "Audio" },
         { value: "article", label: "Article" },
         { value: "document", label: "Document" },
+        { value: "meditation", label: "Meditation" },
+        { value: "exercise", label: "Exercise" },
     ];
     
     const getFileUrl = (resource: any) => {

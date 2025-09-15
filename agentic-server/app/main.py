@@ -273,6 +273,8 @@ async def create_learning_pathway(request: PathwayGenerationRequest):
             topics=request.suggested_resource_topics,
             language=request.student_language
         )
+        
+        print(f"pathway from the {pathway}")
         return pathway
     except ValueError as ve:
         logger.error(f"Validation error during pathway generation: {ve}")
