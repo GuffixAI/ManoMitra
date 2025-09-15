@@ -23,7 +23,9 @@ export default function AdminReportsPage() {
     const { control, handleSubmit, reset } = useForm();
     
     const reports = reportsResponse?.data || [];
-    const counsellors = counsellorsResponse || [];
+    const counsellors = counsellorsResponse?.data || [];
+
+    console.log(counsellors)
 
     const handleOpenAssignDialog = (reportId: string) => {
         setSelectedReportId(reportId);

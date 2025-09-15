@@ -57,7 +57,8 @@ export default function AIReportDetailsPage() {
         return <p>Report not found or data is corrupted.</p>;
     }
     
-    const canViewStandardReport = user?.role === ROLES.ADMIN || user?.role === ROLES.COUNSELLOR;
+    // const canViewStandardReport = user?.role === ROLES.ADMIN || user?.role === ROLES.COUNSELLOR;
+    const canViewStandardReport = true
 
     return (
         <div className="space-y-6">

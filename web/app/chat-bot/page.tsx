@@ -105,7 +105,7 @@ const ChatInterface = () => {
     if (reportLoading && currentStep < steps.length) {
       const timer = setTimeout(() => {
         setCurrentStep((prev) => prev + 1);
-      }, 1500);
+      }, 2500);
       return () => clearTimeout(timer);
     }
 
@@ -114,7 +114,7 @@ const ChatInterface = () => {
       setTimeout(() => {
         setReportLoading(false);
         setOpenModal(false);
-      }, 6000);
+      }, 12500);
     }
   }, [reportLoading, currentStep]);
 
@@ -228,7 +228,7 @@ const ChatInterface = () => {
                   status={status}
                   className="cursor-pointer"
                 />
-                {messages.length > 10 && (
+                {messages.length > 3 && (
                   <button
                     disabled={reportLoading || createReportMutation.isPending}
                     onClick={handleGenerateReport}

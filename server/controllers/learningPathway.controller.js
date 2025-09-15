@@ -14,7 +14,8 @@ const AGENTIC_SERVER_URL = process.env.AGENTIC_SERVER_URL || 'http://localhost:8
 export const generatePathway = asyncHandler(async (req, res) => {
     const { aiReportId } = req.body;
     const studentId = req.user.id;
-
+    
+    try {
     if (!aiReportId) {
         return res.status(400).json({ success: false, message: "AI Report ID is required." });
     }
@@ -24,7 +25,7 @@ export const generatePathway = asyncHandler(async (req, res) => {
     if (!report) {
         return res.status(404).json({ success: false, message: "AI Report not found or you do not have permission." });
     }
-    
+
     // 2. Check if a pathway already exists for this report
     const existingPathway = await LearningPathway.findOne({ basedOnAIReport: aiReportId });
     if (existingPathway) {
@@ -34,15 +35,13 @@ export const generatePathway = asyncHandler(async (req, res) => {
 
     // 3. Parse the standard_report content to extract key info
     let standardReportContent;
-    try {
         standardReportContent = JSON.parse(report.standard_report.standard_content);
-    } catch (e) {
-        return res.status(500).json({ success: false, message: "Could not parse AI report data." });
-    }
+        console.log(standardReportContent)
+    
 
     const key_stressors = standardReportContent.analytics?.key_stressors_identified || [];
     // The topics are nested inside 'summary' in the new report structure
-    const suggested_resource_topics = standardReportContent.summary?.suggested_resource_topics || [];
+    const suggested_resource_topics = standardReportContent?.risk_assessment?.red_flags || [];
     
     if (suggested_resource_topics.length === 0) {
          return res.status(400).json({ success: false, message: "No suggested topics found in the report to generate a pathway." });
@@ -76,6 +75,10 @@ export const generatePathway = asyncHandler(async (req, res) => {
     });
 
     res.status(201).json({ success: true, message: "Learning pathway generated successfully.", data: newPathway });
+
+    } catch (e) {
+        return res.status(500).json({ success: false, message: `Could not parse AI report data: ${e.message}` });
+    }
 });
 
 // @desc    Student gets all their generated learning pathways
